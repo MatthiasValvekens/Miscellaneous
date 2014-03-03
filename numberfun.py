@@ -1,16 +1,34 @@
-
-''' Probabilistically solve the congruence x**2 = a (mod p).
-The probability that no solution is found after n iterations is given by 2**(-n).
-The solution reported is always correct. If the algorithm is certain that no solution exists, 0 is reported.
+import random
 '''
+Compute the largest number m such that p**m | n.
+If res is true, the n/2**m is returned as well.
+'''
+def pord(n,p,res=False):
+	m=0
+	while n%p==0:
+		n//=p
+		m+=1
+	if res:
+		return m,n
+	else:
+		return m
+'''
+Compute the jacobi symbol of two odd coprime numbers m and n, satisfying n>m>1.
 
-def modsqroot(a,p,n=100):
-	if p%4==2 or p%4==0: return 0
-	if p%4==3:
-		b=pow(a,(p+1)//4,p)
-		#Euler's criterion says this is a solution if and only if a solution exists
-		if pow(b,2,p)==a:
-			return b
-		else:
-			return a
-	
+(extra: if n%m==0, the method returns zero)
+'''
+def jacobi(m,n):
+	if n%m==0:
+		return 0
+	jac=1
+	while m>1:
+		#switch
+		t=n
+		n=m
+		m=t
+		
+		jac*=(-1)**(((n-1)//2)*((m-1)//2))
+		m%=n
+		t,m=pord(m,2,True)
+		jac*=(-1)**(t*(n**2-1)//8)
+	return jac
