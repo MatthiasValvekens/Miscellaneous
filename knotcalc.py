@@ -1,7 +1,6 @@
-#conway/kinoshita-terasaka Jones polynomial
-#t^(-4)*(-1+2t-2t^2+2t^3+t^6-2t^7+2t^8-2t^9+t^10)
 from copy import deepcopy
 from ast import literal_eval
+from knotdraw import save_link
 def lget(list,index,default=0):
 	if index<0 or index>=len(list): return default
 	else: return list[index]
@@ -12,7 +11,7 @@ class LaurentPolynomial(object):
 		for i in range(len(self.coeff)//2):
 			if(self.coeff[i]!=0 or self.coeff[len(self.coeff)-1-i]!=0):
 				break
-		return LaurentPolynomial(self.coeff[i:len(self.coeff)-i])	
+		return LaurentPolynomial(self.coeff[i:len(self.coeff)-i])
 	def __str__(self):
 		extr=len(self.coeff)//2
 		res=''
@@ -36,6 +35,7 @@ class LaurentPolynomial(object):
 			else: part=cstr+'A^'+expstr
 			if c!=0: res+=part
 		return res
+
 	def __add__(self,other):
 		extr1=len(self.coeff)//2
 		extr2=len(other.coeff)//2
@@ -76,8 +76,7 @@ class Link(object):
 	def is_consistent(self):
 		if len(self.joins) != len(self.crossings):
 			print("Lengths of joins and crossings do not match in knot "+self.name)
-		for c in range(len(self.joins)):
-			j=self.joins[c]
+		for c,j in enumerate(self.joins):
 			if j!=0:
 				for i in range(4):
 					otherjoin=self.joins[j[i][0]]
@@ -90,7 +89,7 @@ class Link(object):
 		return True
 	#perform a skein fork at crossing c and return two child knots
 	#The fork that should be multiplied by A in the Kauffman bracket calculation is returned first
-	def skein_fork(self,c):
+	def skein_fork(self,c,crosspos=None,canvlen=10):
 		if sum(abs(i) for i in self.crossings)==1: return Link([],[],"unknot"),Link([],[],"unknot")
 		
 		
@@ -157,6 +156,10 @@ class Link(object):
 		F1.joins[c]=0
 		F2.joins[c]=0
 		pfork,nfork=((F1,F2) if self.crossings[c]==1 else (F2,F1))
+		if crosspos is not None:
+			ltext=' loop untwisted' if loop is not None else ''
+			save_link(pfork,crosspos,canvlen,'A-branch'+ltext)
+			save_link(nfork,crosspos,canvlen,'A^(-1)-branch'+ltext)
 		return pfork,nfork
 	def isloop(self,c): #make this method return the looped strands
 		for i in range(len(self.joins[c])):
@@ -169,7 +172,7 @@ class Link(object):
 		return j==[(c,1),(c,0),(c,3),(c,2)] or j==[(c,2),(c,3),(c,0),(c,1)]
 	def __str__(self):
 		return str(self.crossings)+'\n'+str(self.joins)
-	def kauffman(self):
+	def kauffman(self,crosspos=None,canvlen=10):
 		#use skein relations to compute the Kauffman bracket.
 		res=LaurentPolynomial([1])
 		nonzero=[i for i in range(len(self.crossings)) if self.crossings[i]!=0]
@@ -181,9 +184,9 @@ class Link(object):
 				#BUG: figure eight-shaped unknot is not processed correctly
 				loop=self.isloop(c)
 
-				pfork,nfork=self.skein_fork(c)
-				pkauf=pfork.kauffman()
-				nkauf=nfork.kauffman()
+				pfork,nfork=self.skein_fork(c,crosspos,canvlen)
+				pkauf=pfork.kauffman(crosspos,canvlen)
+				nkauf=nfork.kauffman(crosspos,canvlen)
 				#print(str(self))
 				# if self.iseight(c) and len(nonzero)>1:
 					# sn=-1
@@ -195,11 +198,14 @@ class Link(object):
 				if loop is not None:
 					#overtwist: -A**3
 					#undertwist: -A**(-3)
-					if self.crossings[c]==-1 and (loop==(2,3) or loop==(0,1)):
+					if (self.crossings[c]==-1 and (loop==(2,3) or loop==(0,1))) or (self.crossings[c]==1 and (loop==(0,2) or loop==(1,3))):
+						#print(self.name+'\t'+str(-pkauf.amul(3)))
 						return -pkauf.amul(3)
 					else:
+						#print(self.name+'\t'+str(-pkauf.amul(-3)))
 						return -pkauf.amul(-3)
 				else:
+					#print(self.name+'\t'+str(pkauf.amul(1)+nkauf.amul(-1)))
 					return (pkauf.amul(1)+nkauf.amul(-1))
 		return res
 def read_link(fname):
@@ -212,39 +218,3 @@ def read_link(fname):
 			crossings.append(-1 if ('-' in spl[0]) else 1)
 			joins.append(literal_eval(spl[1].strip()))
 	return crossings,joins
-	
-ltcross=[1,-1,-1]
-#ltjoins=[[(1,2),(1,3),(2,0),(2,1)],[(2,2),(2,3),(0,0),(0,1)],[(0,2),(0,3),(1,0),(1,1)]]
-ltjoins=[[(2,3),(1,2),(2,2),(1,3)],[(2,1),(2,0),(0,1),(0,3)],[(1,1),(1,0),(0,2),(0,0)]]
-lefttrefoil=Link(ltcross,ltjoins)
-righttrefoil=Link(*read_link('rtrefoil.txt'),name='rtrefoil')
-print(righttrefoil.kauffman())
-# k1,k2=lefttrefoil.skein_fork(0)
-# print(k1)
-# print(k2)
-# print(k1.kauffman())
-# k11,k12=k1.skein_fork(1)
-# print(k11)
-# print(k11.iseight(2))
-# print(k12)
-# print(k12.iseight(2))
-# #print(str(k11)+'\n'+str(k12))
-# print(k11.kauffman())
-#l1=LaurentPolynomial([-2,4,1])
-#l2=LaurentPolynomial([-2,2,5,3,1])
-#print(str(l1)+'\n'+str(l2)+'\n'+str(l1-l2))
-#print(str((-l1)))
-#print(str(l1.amul(2)))
-#print(LaurentPolynomial([1]))
-print(lefttrefoil.kauffman())
-# eight=Link([1],[[(0,2),(0,3),(0,0),(0,1)]])
-# print(eight.iseight(0))
-#ktjoins=[[(9,2),(2,0),(3,0),(1,0)],[(0,3),(2,2),(3,1),(4,0)],[(0,1),(10,2),(1,1),(4,1)],[(0,2),(1,2),(5,0),(5,1)],[(1,3),(2,3),(5,3),(8,1)],[(3,2),(3,3),(6,1),(4,2)],[(7,0),(5,2),(7,1),(8,0)],[(6,0),(6,2),(9,0),(9,1)],[(6,3),(4,3),(10,1),(10,3)],[(7,2),(7,3),(0,0),(10,0)],[(9,3),(8,2),(2,1),(8,3)]]
-#ktcross=[1,-1,1,1,1,1,1,-1,-1,-1,1]
-ktwrithe=-1 #manually calculated
-kinotera=Link(*read_link('kinotera_representation.txt'),name='kinotera')
-ktkauff=kinotera.kauffman()
-print(ktkauff)
-print(-ktkauff.amul(-3*ktwrithe))
-figure8=Link(*read_link('eight.txt'),name='eight')
-print(figure8.kauffman())
