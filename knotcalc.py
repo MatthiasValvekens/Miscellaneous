@@ -1,6 +1,8 @@
 from copy import deepcopy
 from ast import literal_eval
 from knotdraw import save_link
+debug=False
+inoutdic={0:3,3:0,1:2,2:1}
 def lget(list,index,default=0):
 	if index<0 or index>=len(list): return default
 	else: return list[index]
@@ -46,6 +48,7 @@ class LaurentPolynomial(object):
 		return res.trim()
 	#multiply by a**p
 	def amul(self,p):
+		if p==0: return self
 		extr=len(self.coeff)//2
 		nextr=extr+abs(p)
 		res=LaurentPolynomial([0]*(2*nextr+1))
@@ -89,7 +92,7 @@ class Link(object):
 		return True
 	#perform a skein fork at crossing c and return two child knots
 	#The fork that should be multiplied by A in the Kauffman bracket calculation is returned first
-	def skein_fork(self,c,crosspos=None,canvlen=10):
+	def skein_fork(self,c,crosspos=None,canvlen=10,cnumber=False):
 		if sum(abs(i) for i in self.crossings)==1: return Link([],[],"unknot"),Link([],[],"unknot")
 		
 		
@@ -100,6 +103,7 @@ class Link(object):
 		#sign -1: F2,F1 returned
 		j=self.joins[c]
 		if j==0:
+			print("You done fucked up, this should not happen!")
 			return self,self
 		cross0=j[0][0]
 		cross1=j[1][0]
@@ -117,7 +121,6 @@ class Link(object):
 		F2=Link(deepcopy(self.crossings),deepcopy(self.joins),self.name+'2')
 		F2.crossings[c]=0
 		
-		#print('DebugF1:',F1.joins,cross3,cross1,c,self.crossings,j)
 		loop=self.isloop(c)
 		
 			 
@@ -130,7 +133,6 @@ class Link(object):
 		
 		F1.joins[cross0][othstr0]=j[2]
 		F1.joins[cross2][othstr2]=j[0]
-	#print('DebugF2:',F2.joins,cross2,cross3,c,self.crossings,j)
 		
 		#connect 0 and 1
 		
@@ -158,10 +160,10 @@ class Link(object):
 		pfork,nfork=((F1,F2) if self.crossings[c]==1 else (F2,F1))
 		if crosspos is not None:
 			ltext=' loop untwisted' if loop is not None else ''
-			save_link(pfork,crosspos,canvlen,'A-branch'+ltext)
-			save_link(nfork,crosspos,canvlen,'A^(-1)-branch'+ltext)
+			save_link(pfork,crosspos,canvlen,'A-branch'+ltext,cnumber)
+			save_link(nfork,crosspos,canvlen,'A^(-1)-branch'+ltext,cnumber)
 		return pfork,nfork
-	def isloop(self,c): #make this method return the looped strands
+	def isloop(self,c):
 		for i in range(len(self.joins[c])):
 			k=self.joins[c][i]
 			if k[0]==c:
@@ -172,7 +174,7 @@ class Link(object):
 		return j==[(c,1),(c,0),(c,3),(c,2)] or j==[(c,2),(c,3),(c,0),(c,1)]
 	def __str__(self):
 		return str(self.crossings)+'\n'+str(self.joins)
-	def kauffman(self,crosspos=None,canvlen=10):
+	def kauffman(self,crosspos=None,canvlen=10,cnumber=False):
 		#use skein relations to compute the Kauffman bracket.
 		res=LaurentPolynomial([1])
 		nonzero=[i for i in range(len(self.crossings)) if self.crossings[i]!=0]
@@ -180,34 +182,55 @@ class Link(object):
 			c=nonzero[0]
 			if self.crossings[c]!=0:
 				#detect unknot on branch
-				
-				#BUG: figure eight-shaped unknot is not processed correctly
 				loop=self.isloop(c)
 
-				pfork,nfork=self.skein_fork(c,crosspos,canvlen)
-				pkauf=pfork.kauffman(crosspos,canvlen)
-				nkauf=nfork.kauffman(crosspos,canvlen)
-				#print(str(self))
-				# if self.iseight(c) and len(nonzero)>1:
-					# sn=-1
-					# if (loop==(0,1) and self.crossings[c]==-1) or (loop==(0,2) and self.crossings[c]==1):
-						# sn=1
-					# return (pkauf.amul(-2+sn*3)+pkauf.amul(2+sn*3))
-					
-				
+				pfork,nfork=self.skein_fork(c,crosspos,canvlen,cnumber)
+				pkauf=pfork.kauffman(crosspos,canvlen,cnumber)
+				nkauf=nfork.kauffman(crosspos,canvlen,cnumber)
 				if loop is not None:
 					#overtwist: -A**3
 					#undertwist: -A**(-3)
 					if (self.crossings[c]==-1 and (loop==(2,3) or loop==(0,1))) or (self.crossings[c]==1 and (loop==(0,2) or loop==(1,3))):
-						#print(self.name+'\t'+str(-pkauf.amul(3)))
+						if debug: print(self.name+'\t'+str(-pkauf.amul(3)))
 						return -pkauf.amul(3)
 					else:
-						#print(self.name+'\t'+str(-pkauf.amul(-3)))
+						if debug: print(self.name+'\t'+str(-pkauf.amul(-3)))
 						return -pkauf.amul(-3)
 				else:
-					#print(self.name+'\t'+str(pkauf.amul(1)+nkauf.amul(-1)))
+					if debug: print(self.name+'\t'+str(pkauf.amul(1)+nkauf.amul(-1)))
 					return (pkauf.amul(1)+nkauf.amul(-1))
 		return res
+	def writhe(self):
+		#This routine doesn't work for links
+		if sum(abs(j) for j in self.crossings)==0: return 0
+		
+		outputs=[[-1,-1] for i in range(len(self.crossings))]
+		outputs[0][0]=0
+		curcrossing=self.joins[0][0][0]
+		instrand=self.joins[0][0][1]
+		while curcrossing!=0 or instrand!=3:
+			
+			outstrand=inoutdic[instrand]
+			#print(curcrossing,instrand,outstrand)
+			outputs[curcrossing][0 if outputs[curcrossing][0]==-1 else 1]=outstrand
+			instrand=self.joins[curcrossing][outstrand][1]
+			curcrossing=self.joins[curcrossing][outstrand][0]
+			
+		signs=[0]*len(self.crossings)
+		for c,o in enumerate(outputs):
+			o.sort()
+			if o==[0,1] or o==[2,3]:
+				signs[c]=self.crossings[c]
+			else:
+				signs[c]=-self.crossings[c]
+		return sum(signs)
+	def xlpol(self):
+		kauff=self.kauffman()
+		wr=self.writhe()
+		correct_exp=-3*wr
+		res=kauff.amul(correct_exp)
+		return res if wr%2==0 else -res
+			
 def read_link(fname):
 	joins=[]
 	crossings=[]
@@ -218,3 +241,10 @@ def read_link(fname):
 			crossings.append(-1 if ('-' in spl[0]) else 1)
 			joins.append(literal_eval(spl[1].strip()))
 	return crossings,joins
+if __name__=='__main__':
+	righttrefoil=Link(*read_link('rtrefoil.txt'),name='rtrefoil')
+	print('right trefoil:',righttrefoil.xlpol())
+	kinotera=Link(*read_link('kinotera.txt'),name='Kinoshita-Terasaka')
+	print('Kinoshita-Terasaka: ',kinotera.xlpol())
+	conway=Link(*read_link('conway.txt'), name='Conway')
+	print('Conway: ',conway.xlpol())
