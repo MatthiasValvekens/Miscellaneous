@@ -103,7 +103,7 @@ class Link(object):
 		#sign -1: F2,F1 returned
 		j=self.joins[c]
 		if j==0:
-			print("You done fucked up, this should not happen!")
+			print("You messed up, this should not happen!")
 			return self,self
 		cross0=j[0][0]
 		cross1=j[1][0]
