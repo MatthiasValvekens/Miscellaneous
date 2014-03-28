@@ -3,12 +3,17 @@ from ast import literal_eval
 from knotdraw import save_link
 debug=False
 inoutdic={0:3,3:0,1:2,2:1}
+seendic={}
+def joinstotuples(l):
+	return tuple((0 if i==0 else tuple(i)) for i in l)
+def joinstolists(t):
+	return list((0 if i==0 else list(i)) for i in t)
 def lget(list,index,default=0):
 	if index<0 or index>=len(list): return default
 	else: return list[index]
 class LaurentPolynomial(object):
 	def __init__(self,coeff): #coeff centered around 0
-		self.coeff=coeff	
+		self.coeff=coeff
 	def trim(self):
 		for i in range(len(self.coeff)//2):
 			if(self.coeff[i]!=0 or self.coeff[len(self.coeff)-1-i]!=0):
@@ -72,10 +77,16 @@ class Link(object):
 	#joins(5)=((3,3),(2,0),(4,1),(6,0)) means crossing 5 is attached to crossings 3,2,4,5, at the strands specified
 	#basic non-binding consistency check implemented
 	def __init__(self,crossings,joins,name="nameless"):
-		self.crossings=crossings #crossings: -1 (right strand up) or 1 (left strand up) (0 means a crossing has been deleted and can safely be ignored)
-		self.joins=joins
+		self.crossings=tuple(crossings) #crossings: -1 (right strand up) or 1 (left strand up) (0 means a crossing has been deleted and can safely be ignored)
+		self.joins=joinstotuples(joins)
 		self.name=name
 		self.is_consistent()
+	def __key__(self):
+		return self.crossings,self.joins
+	def __hash__(self):
+		return hash(self.__key__())
+	def __eq__(self,other):
+		return self.__key__()==self.__key__()
 	def is_consistent(self):
 		if len(self.joins) != len(self.crossings):
 			print("Lengths of joins and crossings do not match in knot "+self.name)
@@ -103,7 +114,7 @@ class Link(object):
 		#sign -1: F2,F1 returned
 		j=self.joins[c]
 		if j==0:
-			print("You done fucked up, this should not happen!")
+			print("You messed up, this should not happen!")
 			return self,self
 		cross0=j[0][0]
 		cross1=j[1][0]
@@ -113,50 +124,54 @@ class Link(object):
 		othstr1=j[1][1]
 		othstr2=j[2][1]
 		othstr3=j[3][1]
-		F1=Link(deepcopy(self.crossings),deepcopy(self.joins),self.name+'1')
-		F1.crossings[c]=0
+		f1crossings=list(self.crossings)
+		f2crossings=list(self.crossings)
+		f1joins=joinstolists(self.joins)
+		f2joins=joinstolists(self.joins)
+		f1crossings[c]=0
 		if self.iseight(c):
-			F1.joins[c]=0
-			return F1,None
-		F2=Link(deepcopy(self.crossings),deepcopy(self.joins),self.name+'2')
-		F2.crossings[c]=0
+			f1joins[c]=0
+			return Link(f1crossings,f1joins,self.name+'1'),None
+		f2crossings[c]=0
 		
 		loop=self.isloop(c)
 		
 			 
 		#connect 1 and 3
 		
-		F1.joins[cross1][othstr1]=j[3]
-		F1.joins[cross3][othstr3]=j[1]
+		f1joins[cross1][othstr1]=j[3]
+		f1joins[cross3][othstr3]=j[1]
 		#connect 0 and 2
 	
 		
-		F1.joins[cross0][othstr0]=j[2]
-		F1.joins[cross2][othstr2]=j[0]
+		f1joins[cross0][othstr0]=j[2]
+		f1joins[cross2][othstr2]=j[0]
 		
 		#connect 0 and 1
 		
-		F2.joins[cross1][othstr1]=j[0]
-		F2.joins[cross0][othstr0]=j[1]
+		f2joins[cross1][othstr1]=j[0]
+		f2joins[cross0][othstr0]=j[1]
 		#connect 2 and 3
-		F2.joins[cross3][othstr3]=j[2]
-		F2.joins[cross2][othstr2]=j[3]
+		f2joins[cross3][othstr3]=j[2]
+		f2joins[cross2][othstr2]=j[3]
 		if loop is not None:
 			
 			if loop==(0,2):
-				F2.joins[cross1][othstr1]=j[3]
-				F2.joins[cross3][othstr3]=j[1]
+				f2joins[cross1][othstr1]=j[3]
+				f2joins[cross3][othstr3]=j[1]
 			if loop==(1,3):
-				F2.joins[cross0][othstr0]=j[2]
-				F2.joins[cross2][othstr2]=j[0]
+				f2joins[cross0][othstr0]=j[2]
+				f2joins[cross2][othstr2]=j[0]
 			if loop==(2,3):
-				F1.joins[cross0][othstr0]=j[1]
-				F1.joins[cross1][othstr1]=j[0]
+				f1joins[cross0][othstr0]=j[1]
+				f1joins[cross1][othstr1]=j[0]
 			if loop==(0,1):
-				F1.joins[cross2][othstr2]=j[3]
-				F1.joins[cross3][othstr3]=j[2]
-		F1.joins[c]=0
-		F2.joins[c]=0
+				f1joins[cross2][othstr2]=j[3]
+				f1joins[cross3][othstr3]=j[2]
+		f1joins[c]=0
+		f2joins[c]=0
+		F1=Link(f1crossings,f1joins,self.name+'1')
+		F2=Link(f2crossings,f2joins,self.name+'2')
 		pfork,nfork=((F1,F2) if self.crossings[c]==1 else (F2,F1))
 		if crosspos is not None:
 			ltext=' loop untwisted' if loop is not None else ''
@@ -176,6 +191,10 @@ class Link(object):
 		return str(self.crossings)+'\n'+str(self.joins)
 	def kauffman(self,crosspos=None,canvlen=10,cnumber=False):
 		#use skein relations to compute the Kauffman bracket.
+		#check if we know this one already
+		res=seendic.get(self)
+		if res is not None:
+			return res
 		res=LaurentPolynomial([1])
 		nonzero=[i for i in range(len(self.crossings)) if self.crossings[i]!=0]
 		if len(nonzero)!=0:
@@ -192,13 +211,14 @@ class Link(object):
 					#undertwist: -A**(-3)
 					if (self.crossings[c]==-1 and (loop==(2,3) or loop==(0,1))) or (self.crossings[c]==1 and (loop==(0,2) or loop==(1,3))):
 						if debug: print(self.name+'\t'+str(-pkauf.amul(3)))
-						return -pkauf.amul(3)
+						res=-pkauf.amul(3)
 					else:
 						if debug: print(self.name+'\t'+str(-pkauf.amul(-3)))
-						return -pkauf.amul(-3)
+						res=-pkauf.amul(-3)
 				else:
 					if debug: print(self.name+'\t'+str(pkauf.amul(1)+nkauf.amul(-1)))
-					return (pkauf.amul(1)+nkauf.amul(-1))
+					res=(pkauf.amul(1)+nkauf.amul(-1))
+		seendic[self]=res
 		return res
 	def writhe(self):
 		#This routine doesn't work for links
