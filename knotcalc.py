@@ -1,7 +1,6 @@
-from copy import deepcopy
 from ast import literal_eval
 from knotdraw import save_link
-debug=False
+
 inoutdic={0:3,3:0,1:2,2:1}
 seendic={}
 def joinstotuples(l):
@@ -210,13 +209,10 @@ class Link(object):
 					#overtwist: -A**3
 					#undertwist: -A**(-3)
 					if (self.crossings[c]==-1 and (loop==(2,3) or loop==(0,1))) or (self.crossings[c]==1 and (loop==(0,2) or loop==(1,3))):
-						if debug: print(self.name+'\t'+str(-pkauf.amul(3)))
 						res=-pkauf.amul(3)
 					else:
-						if debug: print(self.name+'\t'+str(-pkauf.amul(-3)))
 						res=-pkauf.amul(-3)
 				else:
-					if debug: print(self.name+'\t'+str(pkauf.amul(1)+nkauf.amul(-1)))
 					res=(pkauf.amul(1)+nkauf.amul(-1))
 		seendic[self]=res
 		return res
