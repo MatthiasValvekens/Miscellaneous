@@ -21,5 +21,20 @@ public class GrammarTest {
 		
 		ChomskyNormalGrammar cnf=new ChomskyNormalGrammar(term, nonterm, ruleset, "S");
 		System.out.println(cnf.parse(new String[] {"she","eats","a","fish","with","a","fork"}));
+		testCNFConvert();
+	}
+	
+	public static void testCNFConvert(){
+		HashSet<String> nonterm=new HashSet<String>(Arrays.asList("S","A","B"));
+		HashSet<String> term=new HashSet<String>(Arrays.asList("a","b"));
+		HashSet<Rule> ruleset=new HashSet<Rule>();
+		ruleset.add(Rule.fromString("S->A S A"));
+		ruleset.add(Rule.fromString("S->a B"));
+		ruleset.add(Rule.fromString("A->B"));
+		ruleset.add(Rule.fromString("A->S"));
+		ruleset.add(Rule.fromString("B->b"));
+		ruleset.add(Rule.fromString("B->"));
+		System.out.println(ContextFreeGrammar.createContextFreeGrammar(term,nonterm,ruleset,"S").toCNF());
+		
 	}
 }

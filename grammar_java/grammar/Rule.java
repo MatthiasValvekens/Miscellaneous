@@ -6,20 +6,29 @@ public final class Rule {
 	public static final String DEFAULT_TRANSFORM_SYMBOL="->";
 	private final List<String> input;
 	private final List<String> output;
+	private final int hashCode;
 	public Rule(String[] in, String[] out){
 		this(Arrays.asList(in),Arrays.asList(out));
 	}
 	public Rule(List<String> in, List<String> out){
 		input=Collections.unmodifiableList(in);
 		output=Collections.unmodifiableList(out);
+		hashCode=getInput().hashCode()*31+getOutput().hashCode();
 	}
 	public static Rule fromString(String rule,String transformSymbol,String delimiter){
 		String[] srule=rule.split(transformSymbol);
-		return new Rule(srule[0].trim().split(delimiter),srule[1].trim().split(delimiter));
+		String[] in=srule[0].trim().split(delimiter);
+		String[] out= srule.length>1 ? (srule[1].trim().split(delimiter)) : new String[0];
+		
+		return new Rule(in,out);
+	}
+	public Rule(Rule r){
+		this(new java.util.ArrayList<String>(r.getInput()),new java.util.ArrayList<String>(r.getOutput()));
 	}
 	public static Rule fromString(String rule){
 		return fromString(rule,DEFAULT_TRANSFORM_SYMBOL,Grammar.DEFAULT_DELIM);
 	}
+	
 	
 	public List<String> getInput(){
 		return input;
@@ -39,7 +48,7 @@ public final class Rule {
 		return o instanceof Rule && ((Rule) o).getInput().equals(input) && ((Rule) o).getOutput().equals(output);
 	}
 	public int hashCode(){
-		return getInput().hashCode()*31+getOutput().hashCode();
+		return hashCode;
 	}
 	
 	//from stackexchange

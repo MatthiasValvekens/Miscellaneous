@@ -3,6 +3,7 @@ package grammar;
 import grammar.util.Tree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,57 +11,49 @@ import java.util.Set;
 
 public class ChomskyNormalGrammar extends ContextFreeGrammar {
 	private class SyntaxTree extends Tree<String>{
-		//nodes in syntax trees are unaware of their parents because this complicates the algorithm 
-		//while at the same time being totally irrelevant to the analysis
-		
 		public SyntaxTree(Tree<String> parent, String value) {
-			super(null, value);
+			super(value);
 		}
 		public SyntaxTree(String value){
 			super(value);
-		}
-		
-		
-		@Override
-		public final void setParent(Tree<String> parent){
-			
 		}
 	}
 	public ChomskyNormalGrammar(Set<String> terminal,
 			Set<String> nonterminal, Set<Rule> rules, String start) {
 		super(terminal, nonterminal, rules, start);
 	}
-	public ChomskyNormalGrammar(Set<String> terminal,
-			Set<String> nonterminal, Set<Rule> rules) {
-		super(terminal, nonterminal, rules);
-	}
 	@Override
 	public boolean admits(String[] input) {
 		return parse(input)!=null;
 	}
 	public Tree<String> parse(String[] input){
+		return parse(Arrays.asList(input));
+	}
+	public Tree<String> parse(List<String> input){
 		final ArrayList<String> nonterm=new ArrayList<String>();//we need to fix an order on the nonterm symbols
 		nonterm.addAll(getNonterminalSymbols());
-		final SyntaxTree[][][] P=new SyntaxTree[input.length][input.length][nonterm.size()];
+		int inputsize=input.size();
+		final SyntaxTree[][][] P=new SyntaxTree[inputsize][inputsize][nonterm.size()];
 		//make a lookup table for nonterm symbol indices
 		Map<String, Integer> lut=new HashMap<String,Integer>();
 		for(int i=0;i<nonterm.size();i++){
 			lut.put(nonterm.get(i),i);
 		}
 		//process unit rules (leaves of tree)
-		for(int i=0;i<input.length;i++){
+		for(int i=0;i<inputsize;i++){
 			//For the ith symbol of the input, we need to find all rules transforming a nonterminal into that symbol
 			for(Rule r: getRules()){
-				if(r.getOutput().size()==1 && r.getOutput().get(0).equals(input[i])) {
+				String term=input.get(i);
+				if(r.getOutput().size()==1 && r.getOutput().get(0).equals(term)) {
 					SyntaxTree t =new SyntaxTree(null,r.getInput().get(0));
-					t.addChild(input[i]);
+					t.addChild(term);
 					P[i][0][lut.get(r.getInput().get(0))]=t;
 				}
 			}
 		}
 		//process compound rules
-		for(int spanlen=2;spanlen<=input.length;spanlen++){
-			for(int start=0;start<input.length-spanlen+1; start++){
+		for(int spanlen=2;spanlen<=inputsize;spanlen++){
+			for(int start=0;start<inputsize-spanlen+1; start++){
 				//we need to split the subsequence of symbols [j,..., j+spanlen-1] into two parts, and consider every such partition
 				for(int part=1;part<=spanlen-1;part++){
 					for(Rule r: getRules()){
@@ -90,12 +83,13 @@ public class ChomskyNormalGrammar extends ContextFreeGrammar {
 				}
 			}
 		}
-		return P[0][input.length-1][lut.get(getStartSymbol())];
+		return P[0][inputsize-1][lut.get(getStartSymbol())];
 	}
 	
 	@Override
 	public boolean isValidRule(Rule r){
 		if(!super.isValidRule(r)) return false;
+		
 //		List<String> inp=r.getInput();
 		List<String> outp=r.getOutput();
 //		//Start symbol only allowed when output is empty.

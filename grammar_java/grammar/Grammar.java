@@ -1,6 +1,8 @@
 package grammar;
 
 
+import grammar.util.Tree;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -16,10 +18,33 @@ public abstract class Grammar {
 	private final Set<String> nonterminal;
 	private final Set<Rule> rules;
 	private final String start;
-	public Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules){
-		this(terminal,nonterminal, rules, (String) nonterminal.toArray()[0]);
+	protected static class NotSupportedException extends RuntimeException{
+		private static final long serialVersionUID = -9053053522674942445L;
+
+		NotSupportedException(String s){
+			super(s);
+		}
 	}
-	public Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules, String start){
+	private static class PlainGrammar extends Grammar{
+		
+		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
+				Set<Rule> rules, String start) {
+			super(terminal, nonterminal, rules, start);
+		}
+
+		@Override
+		public boolean admits(String[] tokens) {
+			throw new NotSupportedException("Parsing not implemented for this grammar.");
+		}
+
+		@Override
+		public Tree<String> parse(List<String> s) {
+			throw new NotSupportedException("Parsing not implemented for this grammar.");
+		}
+		
+	}
+
+	protected Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules, String start){
 		this.terminal=Collections.unmodifiableSet(terminal);
 		this.nonterminal=Collections.unmodifiableSet(nonterminal);
 		this.start=start;
@@ -54,5 +79,22 @@ public abstract class Grammar {
 		List<String> s=r.getInput();
 		for(String n: nonterminal) if(s.indexOf(n)!=-1) return true;
 		return false;
+	}
+	public abstract grammar.util.Tree<String> parse(List<String> s);
+	public grammar.util.Tree<String> parse(String[] s){
+		return parse(java.util.Arrays.asList(s));
+	}
+	public static Grammar createGrammar(Set<String> terminal, Set<String> nonterminal,
+			Set<Rule> rules, String start){
+		return new PlainGrammar(terminal,nonterminal,rules,start);
+	}
+	@Override
+	public String toString(){
+		String res="Terminals: "+terminal.toString()+"\nNonterminals:"+nonterminal.toString()+"\nRules:";
+		StringBuilder sb=new StringBuilder(res);
+		for(Rule r: rules){
+			sb.append("\n"+r.toString());
+		}
+		return sb.toString();
 	}
 }
