@@ -1,11 +1,13 @@
 package grammar;
 
 import grammar.util.Partitioner;
+import grammar.util.SyntaxForest;
 import grammar.util.Partitioner.PartitionTriple;
 import grammar.util.Tree;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,14 +23,12 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 	public boolean admits(String[] tokens) {
 		return false;
 	}
-
-	@Override
-	public Tree<String> parse(List<String> input) {
+	public SyntaxForest allParses(List<String> input){
 		//extended CYK
 		final ArrayList<String> nonterm=new ArrayList<String>();//we need to fix an order on the nonterm symbols
 		nonterm.addAll(getNonterminalSymbols());
 		int inputsize=input.size();
-		final SyntaxTree[][][] P=new SyntaxTree[inputsize][inputsize][nonterm.size()];
+		final SyntaxForest[][][] P=new SyntaxForest[inputsize][inputsize][nonterm.size()];
 		//compute maximal branching factor
 		int maxbranch=0;
 		for(Rule r: getRules()){
@@ -49,7 +49,10 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 				if(r.getOutput().size()==1 && r.getOutput().get(0).equals(term)) {
 					SyntaxTree t =new SyntaxTree(null,r.getInput().get(0));
 					t.addChild(term);
-					P[i][0][lut.get(r.getInput().get(0))]=t;
+					SyntaxForest f =new SyntaxForest();
+					f.add(t);
+					P[i][0][lut.get(r.getInput().get(0))]=f;
+					
 				}
 			}
 		}
@@ -79,7 +82,7 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 							for(int i=0;i<symbolcount;i++)outputix[i]=lut.get(r.getOutput().get(i));
 							//if the first part can be generated from N_B and the second can be generated from N_C
 							//then the whole substring can be generated from N_A by means of rule r
-							SyntaxTree[] children = new SyntaxTree[symbolcount];
+							SyntaxForest[] children = new SyntaxForest[symbolcount];
 							boolean isGenerated=true;
 							for(int i =0;i<symbolcount;i++){
 								int partstart=triple.starts.get(i);
@@ -92,16 +95,66 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 							}
 
 							if(isGenerated) {
-								SyntaxTree t= new SyntaxTree(r.getInput().get(0));
-								for(SyntaxTree c: children) t.addChild(c);
-								P[start][spanlen-1][inputix]=t;
-							}							
+								//add ALL the options!
+								int posscount=1;
+								final int[] choicedomain=new int[children.length];
+								for(int i =0; i<children.length;i++) {
+									int size=children[i].size();
+									posscount*=size;
+									choicedomain[i]=size;
+								}
+								final int totaloptions=posscount;
+								//totally awesome option selector
+								Iterator<int[]> selector = new Iterator<int[]>(){
+									int counter=0;
+									@Override
+									public boolean hasNext() {
+										return counter<totaloptions;
+									}
+
+									@Override
+									public int[] next() {
+										int[] res=new int[choicedomain.length];
+										int curcount=counter;
+										for(int i = 0; i<res.length;i++){
+											res[i]=curcount%choicedomain[i];
+											curcount/=choicedomain[i];
+										}
+										counter++;
+										return res;
+									}
+
+									@Override
+									public void remove() {
+										
+									}
+								};
+
+								SyntaxForest alloptions=new SyntaxForest(posscount);
+								while(selector.hasNext()){
+									int[] selection=selector.next();
+									SyntaxTree t= new SyntaxTree(r.getInput().get(0));
+									for(int i = 0; i<children.length;i++){
+										t.addChild(children[i].get(selection[i]));
+									}
+									alloptions.add(t);
+								}
+								if(P[start][spanlen-1][inputix]==null){
+									P[start][spanlen-1][inputix]=new SyntaxForest();
+								}
+								P[start][spanlen-1][inputix].addAll(alloptions);
+							}
 						}
 					}
 				}
 			}
 		}
 		return P[0][inputsize-1][lut.get(getStartSymbol())];
+	}
+	@Override
+	public Tree<String> parse(List<String> input) {
+		SyntaxForest f = this.allParses(input);
+		return f!=null? f.get(0) : null;
 	}
 	@Override
 	public boolean isValidRule(Rule r){

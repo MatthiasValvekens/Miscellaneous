@@ -83,7 +83,7 @@ public class Tree<T> {
 		sb.append("}");
 		return sb.toString();
 	}
-	private String dotbody(int myindex,Iterator<Integer> gen, String... labelopts){
+	String dotbody(int myindex,Iterator<Integer> gen, String... labelopts){
 		StringBuilder sb=new StringBuilder();
 		StringBuilder opts=new StringBuilder();
 		for(String op:labelopts){

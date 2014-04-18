@@ -1,5 +1,6 @@
 package grammar;
 import grammar.util.GrammarUtils;
+import grammar.util.SyntaxForest;
 
 import java.util.List;
 import java.io.*;
@@ -47,11 +48,29 @@ public class GrammarTest {
 //		Tree<String> t= cnf.parse(new String[] {"ik","ben","Matthias","en","ik","lees","een","interessant","boek","dat","leuk","is","voor","het","slapengaan"});
 //		System.out.println(t);
 //		try{(new java.io.PrintStream(new java.io.FileOutputStream("syntax.gv"))).println(t.toDot("syntax_tree"));}catch(Throwable e){}
+		//testExtended();
+		testAmbiguous();
 		testExtended();
-		
 		
 	}
 	
+	private static void testAmbiguous() throws Exception {
+		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax2.txt");
+		ruleset.addAll(GrammarUtils.rulesFromFile("japaneselexicon.txt"));
+		java.util.Set<Rule> extraunits = GrammarUtils.rulesFromFile("memberships.txt");
+		ChomskyNormalGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
+		ruleset.addAll(extraunits);
+		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "S");
+		//List<String> example=Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です");
+		List<String> example=Arrays.asList("桜　の　花弁　が　落ちてくる　の　を　見た".split("　"));
+		//List<String> example=Arrays.asList("これ　は　新しい　です".split("　"));
+		SyntaxForest f =extgram.allParses(example);
+		Writer w =new PrintWriter(new java.io.File("extendedambiguous.gv"),"UTF-8");
+		w.write(f.toDot("syntax_tree","fontname=\"MS Mincho\""));
+		w.close();
+		
+	}
+
 	public static void testCNFConvert(){
 		HashSet<String> nonterm=new HashSet<String>(Arrays.asList("S","A","B"));
 		HashSet<String> term=new HashSet<String>(Arrays.asList("a","b"));
@@ -76,12 +95,13 @@ public class GrammarTest {
 	}
 	public static void testExtended() throws Exception{
 		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax2.txt");
+		ruleset.addAll(GrammarUtils.rulesFromFile("japaneselexicon.txt"));
 		java.util.Set<Rule> extraunits = GrammarUtils.rulesFromFile("memberships.txt");
 		ChomskyNormalGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
 		ruleset.addAll(extraunits);
 		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "S");
 		//List<String> example=Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です");
-		List<String> example=Arrays.asList("新しい　もの　と　古い　もの　が　ある".split("　"));
+		List<String> example=Arrays.asList("桜　の　花弁　が　落ちてくる　の　を　見た".split("　"));
 		//List<String> example=Arrays.asList("これ　は　新しい　です".split("　"));
 		Tree<String> t =extgram.parse(example);
 		Writer w =new PrintWriter(new java.io.File("extended.gv"),"UTF-8");
