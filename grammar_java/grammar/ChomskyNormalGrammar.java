@@ -5,18 +5,39 @@ import grammar.util.Tree;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class ChomskyNormalGrammar extends ContextFreeGrammar {
-	private class SyntaxTree extends Tree<String>{
-		public SyntaxTree(Tree<String> parent, String value) {
-			super(value);
+	//operates on the assumption that the grammar in question is meant to be Chomsky normal
+	public static ChomskyNormalGrammar getSymbolsFromRules(Set<Rule> rules,String start){
+		HashSet<String> term= new HashSet<String>();
+		HashSet<String> nonterm= new HashSet<String>();
+		for(Rule r: rules){
+			if(r.getInput().size()!=1) throw new IllegalArgumentException("This grammar is not context-free.");
+			nonterm.add(r.getInput().get(0));
+			switch(r.getOutput().size()){
+			case 0:
+				if(!start.equals(r.getInput().get(0))) throw new IllegalArgumentException("Illegal epsilon rule for Chomsky normal form."+r);
+			case 1:
+				term.add(r.getOutput().get(0));
+				break;
+			case 2:
+				nonterm.addAll(r.getOutput());
+				break;
+			default:
+				throw new IllegalArgumentException("Too many branches for Chomsky normal grammar."+r); 
+			}
 		}
-		public SyntaxTree(String value){
-			super(value);
-		}
+		ChomskyNormalGrammar res=null;
+		 try{
+			 res=new ChomskyNormalGrammar(term, nonterm, rules, start);
+		 } catch(Exception e){
+			 throw new RuntimeException("Failed to read symbols.\n"+term+"\n"+nonterm,e);
+		 }
+		 return res;
 	}
 	public ChomskyNormalGrammar(Set<String> terminal,
 			Set<String> nonterminal, Set<Rule> rules, String start) {
@@ -62,11 +83,6 @@ public class ChomskyNormalGrammar extends ContextFreeGrammar {
 							int A=lut.get(r.getInput().get(0));
 							int B=lut.get(r.getOutput().get(0));
 							int C=lut.get(r.getOutput().get(1));
-//							if(r.toString().equals("VP->VP PP")||r.toString().equals("PP->P NP")){
-//								System.err.println(r.toString()+":");
-//								System.err.println(A+" "+B+" "+C+" "+P[start][part-1][B]);
-//								System.err.println(P[start+part][spanlen-part-1][C]);
-//							}
 							//if the first part can be generated from N_B and the second can be generated from N_C
 							//then the whole substring can be generated from N_A by means of rule r
 							SyntaxTree t1=P[start][part-1][B];
@@ -92,6 +108,7 @@ public class ChomskyNormalGrammar extends ContextFreeGrammar {
 		
 //		List<String> inp=r.getInput();
 		List<String> outp=r.getOutput();
+		if(outp.size()==0) return false;
 //		//Start symbol only allowed when output is empty.
 //		if(inp.get(0).equals(getStartSymbol()) && outp.size()!=0) return false;
 		if(outp.size()>2) return false;

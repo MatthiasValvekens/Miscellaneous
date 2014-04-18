@@ -6,12 +6,29 @@ import java.util.List;
 import java.util.Stack;
 import java.util.Set;
 import java.util.HashSet;
+import java.io.*;
 public class GrammarUtils {
 
 	public static <T extends Grammar> T renameSymbol(T grammar, String oldsym, String newsym, Class<T> buildAs){
 		
 		// TODO: implement this
 		return null;
+	}
+	public static Set<Rule> rulesFromFile(String fname) throws IOException{
+		return rulesFromFile(fname,Rule.DEFAULT_TRANSFORM_SYMBOL,Grammar.DEFAULT_DELIM);
+	}
+	public static Set<Rule> rulesFromFile(String fname,String transformSymbol, String delimiter) throws IOException {
+		Set<Rule> result=new HashSet<Rule>();
+		BufferedReader r=new BufferedReader(new InputStreamReader(new FileInputStream(fname),"UTF-8"));
+		String line;
+		while((line=r.readLine())!=null){
+			try{
+				result.add(Rule.fromString(line,transformSymbol,delimiter));
+			}catch(Exception e){
+				
+			}
+		}
+		return result;
 	}
 	//return one representative element of component in question
 	public static Set<String> pruneUnusedNonterminals(Collection<String> nonterm, Collection<Rule> rules){
@@ -84,6 +101,7 @@ public class GrammarUtils {
 			}
 		}
 	}
+
 	public static Set<List<String>> tarjan(Set<String> nonterm, Set<Rule> unitrules){
 		
 		Set<List<String>> components = new HashSet<List<String>>();

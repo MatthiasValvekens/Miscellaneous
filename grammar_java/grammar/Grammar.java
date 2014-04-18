@@ -90,7 +90,7 @@ public abstract class Grammar {
 	}
 	@Override
 	public String toString(){
-		String res="Terminals: "+terminal.toString()+"\nNonterminals:"+nonterminal.toString()+"\nRules:";
+		String res=this.getClass().getName()+"\nTerminals: "+terminal.toString()+"\nNonterminals:"+nonterminal.toString()+"\nRules:";
 		StringBuilder sb=new StringBuilder(res);
 		for(Rule r: rules){
 			sb.append("\n"+r.toString());

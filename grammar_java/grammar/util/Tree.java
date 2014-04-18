@@ -1,6 +1,7 @@
 package grammar.util;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 public class Tree<T> {
 	private final T value;
@@ -54,6 +55,49 @@ public class Tree<T> {
 			return value.toString()+"-> "+result;
 		else return result;
 	}
+	public String toDot(String graphname, String... labelopts){
+		StringBuilder sb = new StringBuilder("digraph "+graphname+" {\n");
+		StringBuilder opts=new StringBuilder();
+		for(String op:labelopts){
+			if(op.contains("=") && !op.contains("color")) opts.append(op+" ");
+		}
+		Iterator<Integer> markergen=new Iterator<Integer>(){
+			int counter=0;
+			@Override
+			public boolean hasNext() {
+				return true;
+			}
+
+			@Override
+			public Integer next() {
+				return ++counter;
+			}
+
+			@Override
+			public void remove() {
+				
+			}
+		};
+		sb.append("0 [label=\""+value+"\" "+opts+"];\n");
+		sb.append(dotbody(0,markergen,labelopts));
+		sb.append("}");
+		return sb.toString();
+	}
+	private String dotbody(int myindex,Iterator<Integer> gen, String... labelopts){
+		StringBuilder sb=new StringBuilder();
+		StringBuilder opts=new StringBuilder();
+		for(String op:labelopts){
+			if(op.contains("=") && !op.contains("color")) opts.append(op+" ");
+		}
+		for(Tree<T> c:children){
+			int childlabel=gen.next();
+			sb.append(childlabel+"[label=\""+c.value+"\""+((c.children.size()!=0)? "": " color=red fontcolor=red ")+opts+"];\n");
+			sb.append(myindex+"->"+childlabel+";\n");
+			sb.append(c.dotbody(childlabel, gen,labelopts));
+		}
+		return sb.toString();
+	}
+	
 	public boolean equals(Object o){
 		if(!(o instanceof Tree<?>))return false;
 		Tree<?> t=(Tree<?>) o;

@@ -10,12 +10,22 @@ public final class Rule {
 	public Rule(String[] in, String[] out){
 		this(Arrays.asList(in),Arrays.asList(out));
 	}
+	public Rule(String in, List<String> out){
+		this(Arrays.asList(in),out);
+	}
+	public Rule(List<String> in, String out){
+		this(in,Arrays.asList(out));
+	}
+	public Rule(String in, String out){
+		this(Arrays.asList(in),Arrays.asList(out));
+	}
 	public Rule(List<String> in, List<String> out){
 		input=Collections.unmodifiableList(in);
 		output=Collections.unmodifiableList(out);
 		hashCode=getInput().hashCode()*31+getOutput().hashCode();
 	}
 	public static Rule fromString(String rule,String transformSymbol,String delimiter){
+		if(!rule.contains(transformSymbol)) throw new IllegalArgumentException("Rule does not contain transform symbol");
 		String[] srule=rule.split(transformSymbol);
 		String[] in=srule[0].trim().split(delimiter);
 		String[] out= srule.length>1 ? (srule[1].trim().split(delimiter)) : new String[0];
