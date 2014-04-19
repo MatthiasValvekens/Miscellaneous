@@ -49,24 +49,33 @@ public class GrammarTest {
 //		System.out.println(t);
 //		try{(new java.io.PrintStream(new java.io.FileOutputStream("syntax.gv"))).println(t.toDot("syntax_tree"));}catch(Throwable e){}
 		//testExtended();
-		testAmbiguous();
-		testExtended();
+		testGeneral();
+		//testExtended();
 		
 	}
 	
-	private static void testAmbiguous() throws Exception {
-		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax2.txt");
+	private static void testGeneral() throws Exception {
+		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax3.txt");
 		ruleset.addAll(GrammarUtils.rulesFromFile("japaneselexicon.txt"));
 		java.util.Set<Rule> extraunits = GrammarUtils.rulesFromFile("memberships.txt");
-		ChomskyNormalGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
+		ContextFreeGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
 		ruleset.addAll(extraunits);
-		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "S");
+		gram=GrammarUtils.processUnitRules(ContextFreeGrammar.createContextFreeGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "MAINS"),false);
+		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(),gram.getNonterminalSymbols(), gram.getRules(), gram.getStartSymbols());
 		//List<String> example=Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です");
-		List<String> example=Arrays.asList("桜　の　花弁　が　落ちてくる　の　を　見た".split("　"));
+		BufferedReader r=new BufferedReader(new InputStreamReader(new FileInputStream("input.txt"),"UTF-8"));
+		String examplesentence=r.readLine().substring(1);
+		List<String> example=Arrays.asList(examplesentence.split("　"));
+		r.close();
+		System.out.println(example);
+		System.out.println(extgram.getRules());
+		System.out.println(extgram.getRules().contains(new Rule("S",Arrays.asList("LINKV","VP"))));
+		System.out.println(extgram.getRules().contains(new Rule("MAINS",Arrays.asList("LINKV","VP"))));
+		System.out.println(extgram.getRules().contains(new Rule("VP",Arrays.asList("LINKV","VP"))));
 		//List<String> example=Arrays.asList("これ　は　新しい　です".split("　"));
 		SyntaxForest f =extgram.allParses(example);
-		Writer w =new PrintWriter(new java.io.File("extendedambiguous.gv"),"UTF-8");
-		w.write(f.toDot("syntax_tree","fontname=\"MS Mincho\""));
+		Writer w =new PrintWriter(new java.io.File("test.gv"),"UTF-8");
+		w.write(f.toDot(examplesentence,"fontname=\"MS Mincho\""));
 		w.close();
 		
 	}
@@ -90,21 +99,6 @@ public class GrammarTest {
 		System.out.println(gram);
 		Tree<String> t =gram.parse(Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です"));
 		Writer w =new PrintWriter(new java.io.File("japanese.gv"),"UTF-8");
-		w.write(t.toDot("syntax_tree","fontname=\"MS Mincho\""));
-		w.close();
-	}
-	public static void testExtended() throws Exception{
-		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax2.txt");
-		ruleset.addAll(GrammarUtils.rulesFromFile("japaneselexicon.txt"));
-		java.util.Set<Rule> extraunits = GrammarUtils.rulesFromFile("memberships.txt");
-		ChomskyNormalGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
-		ruleset.addAll(extraunits);
-		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "S");
-		//List<String> example=Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です");
-		List<String> example=Arrays.asList("桜　の　花弁　が　落ちてくる　の　を　見た".split("　"));
-		//List<String> example=Arrays.asList("これ　は　新しい　です".split("　"));
-		Tree<String> t =extgram.parse(example);
-		Writer w =new PrintWriter(new java.io.File("extended.gv"),"UTF-8");
 		w.write(t.toDot("syntax_tree","fontname=\"MS Mincho\""));
 		w.close();
 	}

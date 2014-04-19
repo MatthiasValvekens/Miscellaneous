@@ -3,7 +3,9 @@ package grammar;
 
 import grammar.util.Tree;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -17,7 +19,7 @@ public abstract class Grammar {
 	private final Set<String> terminal;
 	private final Set<String> nonterminal;
 	private final Set<Rule> rules;
-	private final String start;
+	private final Set<String> start;
 	protected static class NotSupportedException extends RuntimeException{
 		private static final long serialVersionUID = -9053053522674942445L;
 
@@ -28,8 +30,13 @@ public abstract class Grammar {
 	private static class PlainGrammar extends Grammar{
 		
 		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
-				Set<Rule> rules, String start) {
+				Set<Rule> rules, Set<String> start) {
 			super(terminal, nonterminal, rules, start);
+		}
+
+		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
+				Set<Rule> rules, String start) {
+			super(terminal,nonterminal,rules,start);
 		}
 
 		@Override
@@ -43,12 +50,14 @@ public abstract class Grammar {
 		}
 		
 	}
-
 	protected Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules, String start){
+		this(terminal,nonterminal, rules, new HashSet<String>(Arrays.asList(start)));
+	}
+	protected Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules, Set<String> start){
 		this.terminal=Collections.unmodifiableSet(terminal);
 		this.nonterminal=Collections.unmodifiableSet(nonterminal);
 		this.start=start;
-		if(!nonterminal.contains(start)) throw new IllegalArgumentException("Start symbol not recognised.");
+		for(String starts: start) if(!nonterminal.contains(starts)) throw new IllegalArgumentException("Start symbol not recognised.");
 		if(!Collections.disjoint(terminal, nonterminal)) throw new IllegalArgumentException("Terminals and nonterminals have nonempty intersection.");
 		for(Rule r: rules) if(!isValidRule(r)) throw new IllegalArgumentException("Invalid rule "+r);
 		this.rules=Collections.unmodifiableSet(rules);
@@ -57,7 +66,7 @@ public abstract class Grammar {
 	public Set<String> getTerminalSymbols(){
 		return terminal;
 	}
-	public String getStartSymbol(){
+	public Set<String> getStartSymbols(){
 		return start;
 	}
 	public Set<String> getNonterminalSymbols(){
@@ -85,7 +94,11 @@ public abstract class Grammar {
 		return parse(java.util.Arrays.asList(s));
 	}
 	public static Grammar createGrammar(Set<String> terminal, Set<String> nonterminal,
-			Set<Rule> rules, String start){
+			Set<Rule> rules, Set<String> start){
+		return new PlainGrammar(terminal,nonterminal,rules,start);
+	}
+	public static Grammar createGrammar(Set<String> terminal, Set<String> nonterminal,
+			Set<Rule> rules,String start){
 		return new PlainGrammar(terminal,nonterminal,rules,start);
 	}
 	@Override

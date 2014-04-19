@@ -99,9 +99,13 @@ public class Tree<T> {
 	}
 	
 	public boolean equals(Object o){
+		if(o==this) return true;
 		if(!(o instanceof Tree<?>))return false;
 		Tree<?> t=(Tree<?>) o;
 		
 		return t.value.equals(value)&&t.children.equals(children);
+	}
+	public int hashCode(){
+		return value.hashCode()*31+children.hashCode();
 	}
 }

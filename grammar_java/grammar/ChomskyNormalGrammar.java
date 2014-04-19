@@ -39,6 +39,10 @@ public class ChomskyNormalGrammar extends ExtendedChomskyNormalGrammar {
 			Set<String> nonterminal, Set<Rule> rules, String start) {
 		super(terminal, nonterminal, rules, start);
 	}
+	public ChomskyNormalGrammar(Set<String> terminal,
+			Set<String> nonterminal, Set<Rule> rules, Set<String> startSymbols) {
+		super(terminal,nonterminal,rules,startSymbols);
+	}
 	public Tree<String> parse(String[] input){
 		return parse(Arrays.asList(input));
 	}

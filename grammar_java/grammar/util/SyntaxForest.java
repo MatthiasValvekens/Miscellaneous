@@ -1,5 +1,6 @@
 package grammar.util;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 public class SyntaxForest extends ArrayList<Tree<String>>{
@@ -9,8 +10,21 @@ public class SyntaxForest extends ArrayList<Tree<String>>{
 	public SyntaxForest(int capacity) {
 		super(capacity);
 	}
+	@Override
+	public boolean add(Tree<String> element) {
+		if(contains(element)) return false;
+		return super.add(element);
+	}
+	@Override
+	public boolean addAll(Collection<? extends Tree<String>> els){
+		for(Tree<String> e : els){
+			if(contains(e)) return false;
+		}
+		return super.addAll(els);
+	}
 	public String toDot(String graphname, String... labelopts){
-		StringBuilder sb = new StringBuilder("digraph "+graphname+" {\n");
+		// XXX hardcoded font 
+		StringBuilder sb = new StringBuilder("digraph {\ncharset=\"UTF-8\";\ngraph [fontname=\"MS Mincho\",labelloc=\"t\",label=\""+graphname+"\"];\n");
 		StringBuilder opts=new StringBuilder();
 		for(String op:labelopts){
 			if(op.contains("=") && !op.contains("color")) opts.append(op+" ");
@@ -32,7 +46,6 @@ public class SyntaxForest extends ArrayList<Tree<String>>{
 				
 			}
 		};
-		
 		
 		
 		for(int i = 0; i<size();i++){

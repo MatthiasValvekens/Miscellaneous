@@ -55,7 +55,7 @@ public final class Rule {
 		return join(input,delim)+transformSymbol+join(output,delim);
 	}
 	public boolean equals(Object o){
-		return o instanceof Rule && ((Rule) o).getInput().equals(input) && ((Rule) o).getOutput().equals(output);
+		return (o==this) ||( o instanceof Rule && ((Rule) o).getInput().equals(input) && ((Rule) o).getOutput().equals(output));
 	}
 	public int hashCode(){
 		return hashCode;

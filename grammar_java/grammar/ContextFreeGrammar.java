@@ -1,6 +1,5 @@
 package grammar;
 
-import grammar.util.Tree;
 import grammar.util.*;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
-import java.util.Stack;
 
 public abstract class ContextFreeGrammar extends Grammar {
 	
@@ -17,8 +15,13 @@ public abstract class ContextFreeGrammar extends Grammar {
 	 * @author Matthias Valvekens
 	 * @version 1.0
 	 */
+	private final String startSymbol;
 	private static class PlainGrammar extends ContextFreeGrammar{
 		
+		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
+				Set<Rule> rules, Set<String> start) {
+			super(terminal, nonterminal, rules, start);
+		}
 		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
 				Set<Rule> rules, String start) {
 			super(terminal, nonterminal, rules, start);
@@ -36,8 +39,15 @@ public abstract class ContextFreeGrammar extends Grammar {
 		
 	}
 	public ContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
-			Set<Rule> rules, String start) {
+			Set<Rule> rules, Set<String> start) {
 		super(terminal, nonterminal, rules, start);
+		startSymbol=start.iterator().next();
+	}
+
+	public ContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
+			Set<Rule> rules, String start) {
+		super(terminal,nonterminal,rules,start);
+		this.startSymbol=start;
 	}
 
 	@Override
@@ -56,7 +66,7 @@ public abstract class ContextFreeGrammar extends Grammar {
 		//add new start symbol
 		String newstart = sym.generateNewSymbol(getStartSymbol(),getTerminalSymbols(),getNonterminalSymbols());
 		newnonterm.add(newstart);
-		newrules.add(new Rule(Arrays.asList(newstart),Arrays.asList(getStartSymbol())));
+		for(String starts: getStartSymbols()) newrules.add(new Rule(Arrays.asList(newstart),Arrays.asList(starts)));
 		//add dummy terminals & rules where necessary
 		for(String a : getTerminalSymbols()){
 			//check if a rule of the form A->a already exists
@@ -148,92 +158,18 @@ public abstract class ContextFreeGrammar extends Grammar {
 			} 
 		}
 		newrules.addAll(tobeadded);
-		//remove unit rules
+		ContextFreeGrammar cfg = GrammarUtils.processUnitRules(createContextFreeGrammar(getTerminalSymbols(), newnonterm, newrules, newstart),true);
 		
-		//collapse all strong components of the directed graph of unit rules, and remove the remaining redundancies
-		//(i.e. removing the cycles from the graph)
-		//e.g. A->B and B->A gets removed, and all instances of A are replaced by B
-		Set<Rule> unitrules=new HashSet<Rule>();
-		for(Rule r: newrules){
-			if(r.getOutput().size()==1 && newnonterm.contains(r.getOutput().get(0))) unitrules.add(r);
-		}
-		Set<List<String>> cycles=GrammarUtils.tarjan(newnonterm,unitrules);
-		for(List<String> c: cycles){
-			//System.out.println(c);
-			if(c.size()==1) continue;
-			String rep=c.get(0);
-			for(Rule r : new HashSet<Rule>(newrules)){
-				List<String> newin= c.contains(r.getInput().get(0)) ? Arrays.asList(rep) : Arrays.asList(r.getInput().get(0));
-				newrules.remove(r);
-				List<String> newout=new ArrayList<String>(r.getOutput().size());
-				for(int i = 0; i<r.getOutput().size();i++){
-					String oldval=r.getOutput().get(i);
-					if(c.contains(oldval)) newout.add(rep);
-					else newout.add(oldval);
-				}
-				if(!newin.equals(newout)){
-					newrules.add(new Rule(newin,newout));
-					
-				}
-			}
-		}
-		//extract unit rules again
-		unitrules=new HashSet<Rule>();
-		for(Rule r: newrules){
-			if(r.getOutput().size()==1 && newnonterm.contains(r.getOutput().get(0))) unitrules.add(r);
-		}
-		//propagate remaining unit rules
-		
-		Stack<List<String>> stack = new Stack<List<String>>();
-		//start at terminals and work backwards to find all nonterminals that generate a given terminal by unit rules only
-		for(String t: getTerminalSymbols()){
-			//find the (unique) nonterminal that generates this symbol in one step
-			
-			for(String nt: newnonterm){
-				Rule r=new Rule(Arrays.asList(nt),Arrays.asList(t));
-				
-				//check all rules, unitrules doesn't contain the terminal-final rules
-				if(newrules.contains(r)) {
-					stack.push(Arrays.asList(r.getInput().get(0)));
-					break;
-				}
-			}
-			
-			do {
-				List<String> current=stack.peek();
-				String lastnode=current.get(current.size()-1);
-				//find and enqueue all generating rules
-				boolean isleaf=true;
-				for(String nt: newnonterm){
-					Rule r= new Rule(Arrays.asList(nt),Arrays.asList(lastnode));
-					if(unitrules.contains(r)){
-						List<String> newpath= new ArrayList<String>(current);
-						newpath.add(nt);
-						stack.push(newpath);
-						isleaf=false;
-					}
-				}
-				if(isleaf){
-					
-					newrules.add(new Rule(Arrays.asList(lastnode),Arrays.asList(t)));
-					//pop things off the stack till the previous branch
-					try {
-						while(stack.pop().size()==stack.peek().size()+1);
-					} catch(java.util.EmptyStackException e) {}
-				}
-			} while(!stack.isEmpty());
-			
-		}
-		//remove all unit rules in one go
-		for(Rule r: unitrules){
-			if(newnonterm.contains(r.getOutput().get(0)))newrules.remove(r);
-			
-		}
-		
-		newnonterm=GrammarUtils.pruneUnusedNonterminals(newnonterm, newrules);
-		return new ChomskyNormalGrammar(getTerminalSymbols(),newnonterm,newrules,newstart);
+		newnonterm=GrammarUtils.pruneUnusedNonterminals(newnonterm, cfg.getRules());
+		return new ChomskyNormalGrammar(getTerminalSymbols(),newnonterm,cfg.getRules(),cfg.getStartSymbols());
 	}
-
+	public String getStartSymbol(){
+		return startSymbol;
+	}
+	public static ContextFreeGrammar createContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
+			Set<Rule> rules, Set<String> start){
+		return new PlainGrammar(terminal,nonterminal,rules,start);
+	}
 	public static ContextFreeGrammar createContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
 			Set<Rule> rules, String start){
 		return new PlainGrammar(terminal,nonterminal,rules,start);

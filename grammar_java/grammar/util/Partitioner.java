@@ -43,7 +43,7 @@ public class Partitioner<T> implements Iterable<Partitioner.PartitionTriple<T>> 
 	 * @param numpieces
 	 */
 	public Partitioner(List<T> ground, int numpieces){
-		if(numpieces>ground.size()) throw new IllegalArgumentException("Partition count is greater than size");
+		if(numpieces>ground.size()) throw new IllegalArgumentException("Partition count "+numpieces+" is greater than size "+ground.size());
 		this.ground=ground;
 		this.numpieces=numpieces;
 		triples=Collections.unmodifiableList(build());
