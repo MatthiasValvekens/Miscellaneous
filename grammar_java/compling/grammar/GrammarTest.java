@@ -1,4 +1,4 @@
-package grammar;
+package compling.grammar;
 import grammar.util.GrammarUtils;
 import grammar.util.SyntaxForest;
 
@@ -60,7 +60,7 @@ public class GrammarTest {
 		java.util.Set<Rule> extraunits = GrammarUtils.rulesFromFile("memberships.txt");
 		ContextFreeGrammar gram = ChomskyNormalGrammar.getSymbolsFromRules(ruleset, "S");
 		ruleset.addAll(extraunits);
-		gram=GrammarUtils.processUnitRules(ContextFreeGrammar.createContextFreeGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "MAINS"),false);
+		gram=GrammarUtils.processUnitRules(ContextFreeGrammar.createContextFreeGrammar(gram.getTerminalSymbols(), gram.getNonterminalSymbols(), ruleset, "MAINS"),false,false);
 		ExtendedChomskyNormalGrammar extgram=new ExtendedChomskyNormalGrammar(gram.getTerminalSymbols(),gram.getNonterminalSymbols(), gram.getRules(), gram.getStartSymbols());
 		//List<String> example=Arrays.asList("これ","は","駅","の","前","に","ある","文房具屋","で","新しく","買った","ペン","です");
 		BufferedReader r=new BufferedReader(new InputStreamReader(new FileInputStream("input.txt"),"UTF-8"));
@@ -68,12 +68,12 @@ public class GrammarTest {
 		List<String> example=Arrays.asList(examplesentence.split("　"));
 		r.close();
 		System.out.println(example);
-		System.out.println(extgram.getRules());
-		System.out.println(extgram.getRules().contains(new Rule("S",Arrays.asList("LINKV","VP"))));
+		//System.out.println(extgram.getRules());
+		System.out.println(extgram.getRules().contains(new Rule("MAINS","VP")));
 		System.out.println(extgram.getRules().contains(new Rule("MAINS",Arrays.asList("LINKV","VP"))));
 		System.out.println(extgram.getRules().contains(new Rule("VP",Arrays.asList("LINKV","VP"))));
 		//List<String> example=Arrays.asList("これ　は　新しい　です".split("　"));
-		SyntaxForest f =extgram.allParses(example);
+		SyntaxForest f =GrammarUtils.reduce(extgram.allParses(example),extgram.getRules());
 		Writer w =new PrintWriter(new java.io.File("test.gv"),"UTF-8");
 		w.write(f.toDot(examplesentence,"fontname=\"MS Mincho\""));
 		w.close();

@@ -1,4 +1,4 @@
-package grammar;
+package compling.grammar;
 
 import grammar.util.*;
 import java.util.Arrays;
@@ -158,7 +158,7 @@ public abstract class ContextFreeGrammar extends Grammar {
 			} 
 		}
 		newrules.addAll(tobeadded);
-		ContextFreeGrammar cfg = GrammarUtils.processUnitRules(createContextFreeGrammar(getTerminalSymbols(), newnonterm, newrules, newstart),true);
+		ContextFreeGrammar cfg = GrammarUtils.processUnitRules(createContextFreeGrammar(getTerminalSymbols(), newnonterm, newrules, newstart),true,true);
 		
 		newnonterm=GrammarUtils.pruneUnusedNonterminals(newnonterm, cfg.getRules());
 		return new ChomskyNormalGrammar(getTerminalSymbols(),newnonterm,cfg.getRules(),cfg.getStartSymbols());

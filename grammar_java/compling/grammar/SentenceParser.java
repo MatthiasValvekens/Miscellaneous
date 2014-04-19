@@ -1,4 +1,4 @@
-package grammar;
+package compling.grammar;
 
 public class SentenceParser {
 

@@ -1,4 +1,4 @@
-package grammar;
+package compling.grammar;
 
 import grammar.util.Tree;
 import java.util.Arrays;
