@@ -1,13 +1,14 @@
 package compling.grammar;
-import grammar.util.GrammarUtils;
-import grammar.util.SyntaxForest;
 
 import java.util.List;
 import java.io.*;
-import grammar.util.Tree;
 
 import java.util.Arrays;
 import java.util.HashSet;
+
+import compling.grammar.util.GrammarUtils;
+import compling.grammar.util.SyntaxForest;
+import compling.grammar.util.Tree;
 
 public class GrammarTest {
 	public static void main(String[] args) throws Exception{

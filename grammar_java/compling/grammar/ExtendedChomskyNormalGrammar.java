@@ -1,9 +1,5 @@
 package compling.grammar;
 
-import grammar.util.Partitioner;
-import grammar.util.SyntaxForest;
-import grammar.util.Partitioner.PartitionTriple;
-import grammar.util.Tree;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +8,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import compling.grammar.util.Partitioner;
+import compling.grammar.util.SyntaxForest;
+import compling.grammar.util.Tree;
+import compling.grammar.util.Partitioner.PartitionTriple;
 
 
 public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {

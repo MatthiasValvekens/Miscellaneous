@@ -1,10 +1,11 @@
 package compling.grammar;
 
-import grammar.util.Tree;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import compling.grammar.util.Tree;
 
 public class ChomskyNormalGrammar extends ExtendedChomskyNormalGrammar {
 	//operates on the assumption that the grammar in question is meant to be Chomsky normal

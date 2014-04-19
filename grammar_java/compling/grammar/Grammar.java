@@ -1,13 +1,14 @@
 package compling.grammar;
 
 
-import grammar.util.Tree;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import compling.grammar.util.Tree;
 
 /**
  * 
@@ -89,8 +90,8 @@ public abstract class Grammar {
 		for(String n: nonterminal) if(s.indexOf(n)!=-1) return true;
 		return false;
 	}
-	public abstract grammar.util.Tree<String> parse(List<String> s);
-	public grammar.util.Tree<String> parse(String[] s){
+	public abstract compling.grammar.util.Tree<String> parse(List<String> s);
+	public compling.grammar.util.Tree<String> parse(String[] s){
 		return parse(java.util.Arrays.asList(s));
 	}
 	public static Grammar createGrammar(Set<String> terminal, Set<String> nonterminal,
