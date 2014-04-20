@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.Set;
 import java.util.HashSet;
@@ -13,11 +14,26 @@ import java.io.*;
 
 import compling.grammar.*;
 public class GrammarUtils {
-
+	public static Set<String> stringToAlphabet(String s){
+		Set<String> res= new HashSet<String>();
+		for(char c: s.toCharArray()){
+			res.add(Character.toString(c));
+		}
+		return res;
+	}
+	//assume everything is a nonterminal
+	public static Set<String> extractNonterminals(Set<Rule> syntaxrules){
+		HashSet<String> s = new HashSet<String>();
+		for(Rule r: syntaxrules){
+			for(String symb : r.getInput()) s.add(symb);
+			for(String symb : r.getOutput()) s.add(symb);
+		}
+		return s;
+	}
 	public static <T extends Grammar> T renameSymbol(T grammar, String oldsym, String newsym, Class<T> buildAs){
 		
 		// TODO: implement this
-		return null;
+		throw new UnsupportedOperationException("Not implemented.");
 	}
 	public static ContextFreeGrammar processUnitRules(ContextFreeGrammar g, boolean generalizeTerminals, boolean deleteUnits){
 		//remove unit rules in a manner that does not affect the generated language
@@ -88,7 +104,7 @@ public class GrammarUtils {
 				}
 			}
 			
-			do {
+			while(!stack.isEmpty()) {
 				List<String> current=stack.peek();
 				String lastnode=current.get(current.size()-1);
 				//find and enqueue all generating rules
@@ -127,7 +143,7 @@ public class GrammarUtils {
 						}
 					}
 				}
-			} while(!stack.isEmpty());
+			} 
 			//System.out.println(extraunits);
 		}
 		//remove all unit rules in one go
@@ -331,6 +347,69 @@ public class GrammarUtils {
 		}
 		return res;
 	}
+	
+	public static final Map<String,String> UNIVERSAL_IDENTITY = new Map<String,String>() {
+
+		@Override
+		public void clear() {
+		}
+
+		@Override
+		public boolean containsKey(Object key) {
+			return true;
+		}
+
+		@Override
+		public boolean containsValue(Object value) {
+			return true;
+		}
+
+		@Override
+		public Set<java.util.Map.Entry<String, String>> entrySet() {
+			return null;
+		}
+
+		@Override
+		public String get(Object key) {
+			// TODO Auto-generated method stub
+			return (String)key;
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return false;
+		}
+
+		@Override
+		public Set<String> keySet() {
+			return null;
+		}
+
+		@Override
+		public String put(String key, String value) {
+			return null;
+		}
+
+		@Override
+		public void putAll(Map<? extends String, ? extends String> m) {
+			
+		}
+
+		@Override
+		public String remove(Object key) {
+			return null;
+		}
+
+		@Override
+		public int size() {
+			return 0;
+		}
+
+		@Override
+		public Collection<String> values() {
+			return null;
+		}			
+	};
 	
 	
 }

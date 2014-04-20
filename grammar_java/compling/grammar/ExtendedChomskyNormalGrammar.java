@@ -3,12 +3,14 @@ package compling.grammar;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import compling.grammar.util.GrammarUtils;
 import compling.grammar.util.Partitioner;
 import compling.grammar.util.SyntaxForest;
 import compling.grammar.util.Tree;
@@ -25,12 +27,20 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 			Set<String> nonterminal, Set<Rule> rules, String start) {
 		super(terminal,nonterminal,rules,start);
 	}
+	public ExtendedChomskyNormalGrammar(Grammar g){
+		super(g);
+	}
 	@Override
 	public boolean admits(String[] tokens) {
 		return parse(Arrays.asList(tokens))!=null;
 	}
-	public SyntaxForest allParses(List<String> input/*, boolean alwaysPropagateUnits*/){
-		// TODO implement alwayspropagateunits without somehow kludging up the whole thing
+	public SyntaxForest allParses(List<String> input){
+		//call allParses with the identity map
+		return allParses(input, GrammarUtils.UNIVERSAL_IDENTITY);
+	}
+	public SyntaxForest allParses(List<String> input, Map<String,String> labelTranslator/*, boolean alwaysPropagateUnits*/){
+		
+		
 		//extended CYK
 		final ArrayList<String> nonterm=new ArrayList<String>();//we need to fix an order on the nonterm symbols
 		nonterm.addAll(getNonterminalSymbols());
@@ -145,7 +155,7 @@ public class ExtendedChomskyNormalGrammar extends ContextFreeGrammar {
 								SyntaxForest alloptions=new SyntaxForest(posscount);
 								while(selector.hasNext()){
 									int[] selection=selector.next();
-									Tree<String> t= new Tree<String>(r.getInput().get(0));
+									Tree<String> t= new Tree<String>(labelTranslator.get(r.getInput().get(0)));
 									for(int i = 0; i<children.length;i++){
 										t.addChild(children[i].get(selection[i]));
 									}

@@ -6,8 +6,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import compling.grammar.util.SyntaxForest;
 import compling.grammar.util.Tree;
 
 /**
@@ -16,18 +18,14 @@ import compling.grammar.util.Tree;
  * @version 1.0
  */
 public abstract class Grammar {
+	
+
 	public static final String DEFAULT_DELIM=" ";
 	private final Set<String> terminal;
 	private final Set<String> nonterminal;
 	private final Set<Rule> rules;
 	private final Set<String> start;
-	protected static class NotSupportedException extends RuntimeException{
-		private static final long serialVersionUID = -9053053522674942445L;
-
-		NotSupportedException(String s){
-			super(s);
-		}
-	}
+	private final int hashCode;
 	private static class PlainGrammar extends Grammar{
 		
 		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
@@ -42,14 +40,28 @@ public abstract class Grammar {
 
 		@Override
 		public boolean admits(String[] tokens) {
-			throw new NotSupportedException("Parsing not implemented for this grammar.");
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
 		}
 
 		@Override
 		public Tree<String> parse(List<String> s) {
-			throw new NotSupportedException("Parsing not implemented for this grammar.");
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
+		}
+
+		@Override
+		public SyntaxForest allParses(List<String> s) {
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
+		}
+
+		@Override
+		public SyntaxForest allParses(List<String> s,
+				Map<String, String> labelTranslator) {
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
 		}
 		
+	}
+	public Grammar(Grammar g){
+		this(g.terminal,g.nonterminal,g.rules,g.start);
 	}
 	protected Grammar(Set<String> terminal, Set<String> nonterminal, Set<Rule> rules, String start){
 		this(terminal,nonterminal, rules, new HashSet<String>(Arrays.asList(start)));
@@ -58,10 +70,11 @@ public abstract class Grammar {
 		this.terminal=Collections.unmodifiableSet(terminal);
 		this.nonterminal=Collections.unmodifiableSet(nonterminal);
 		this.start=start;
-		for(String starts: start) if(!nonterminal.contains(starts)) throw new IllegalArgumentException("Start symbol not recognised.");
+		for(String starts: start) if(!nonterminal.contains(starts)) throw new IllegalArgumentException("Start symbol "+starts+" not recognised.");
 		if(!Collections.disjoint(terminal, nonterminal)) throw new IllegalArgumentException("Terminals and nonterminals have nonempty intersection.");
 		for(Rule r: rules) if(!isValidRule(r)) throw new IllegalArgumentException("Invalid rule "+r);
 		this.rules=Collections.unmodifiableSet(rules);
+		hashCode=computeHashCode();
 	}
 	
 	public Set<String> getTerminalSymbols(){
@@ -90,7 +103,9 @@ public abstract class Grammar {
 		for(String n: nonterminal) if(s.indexOf(n)!=-1) return true;
 		return false;
 	}
-	public abstract compling.grammar.util.Tree<String> parse(List<String> s);
+	public abstract Tree<String> parse(List<String> s);
+	public abstract SyntaxForest allParses(List<String> s);
+	public abstract SyntaxForest allParses(List<String> s,Map<String,String> labelTranslator);
 	public compling.grammar.util.Tree<String> parse(String[] s){
 		return parse(java.util.Arrays.asList(s));
 	}
@@ -111,4 +126,39 @@ public abstract class Grammar {
 		}
 		return sb.toString();
 	}
+	
+	private int computeHashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((rules == null) ? 0 : rules.hashCode());
+		result = prime * result + ((start == null) ? 0 : start.hashCode());
+		return result;
+	}
+	@Override
+	public int hashCode(){
+		return hashCode;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Grammar other = (Grammar) obj;
+		if (rules == null) {
+			if (other.rules != null)
+				return false;
+		} else if (!rules.equals(other.rules))
+			return false;
+		if (start == null) {
+			if (other.start != null)
+				return false;
+		} else if (!start.equals(other.start))
+			return false;
+		return true;
+	}
+	
+
 }

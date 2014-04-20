@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 public final class Rule {
 	public static final String DEFAULT_TRANSFORM_SYMBOL="->";
+	public static final String DEFAULT_DELIM=Grammar.DEFAULT_DELIM;
 	private final List<String> input;
 	private final List<String> output;
 	private final int hashCode;
@@ -49,7 +50,7 @@ public final class Rule {
 	}
 	
 	public String toString(){
-		return toString(Grammar.DEFAULT_DELIM, DEFAULT_TRANSFORM_SYMBOL);
+		return toString(DEFAULT_DELIM, DEFAULT_TRANSFORM_SYMBOL);
 	}
 	public String toString(String delim, String transformSymbol){
 		return join(input,delim)+transformSymbol+join(output,delim);

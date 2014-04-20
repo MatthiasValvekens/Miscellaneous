@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
 
@@ -16,7 +17,6 @@ public abstract class ContextFreeGrammar extends Grammar {
 	 * @author Matthias Valvekens
 	 * @version 1.0
 	 */
-	private final String startSymbol;
 	private static class PlainGrammar extends ContextFreeGrammar{
 		
 		public PlainGrammar(Set<String> terminal, Set<String> nonterminal,
@@ -30,25 +30,35 @@ public abstract class ContextFreeGrammar extends Grammar {
 
 		@Override
 		public boolean admits(String[] tokens) {
-			throw new Grammar.NotSupportedException("Parsing not implemented for this grammar.");
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
 		}
 
 		@Override
 		public Tree<String> parse(List<String> s) {
-			throw new Grammar.NotSupportedException("Parsing not implemented for this grammar.");
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
+		}
+		@Override
+		public SyntaxForest allParses(List<String> s) {
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
+		}
+		@Override
+		public SyntaxForest allParses(List<String> s,
+				Map<String, String> labelTranslator) {
+			throw new UnsupportedOperationException("Parsing not implemented for this grammar.");
 		}
 		
+	}
+	public ContextFreeGrammar(Grammar g){
+		super(g);
 	}
 	public ContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
 			Set<Rule> rules, Set<String> start) {
 		super(terminal, nonterminal, rules, start);
-		startSymbol=start.iterator().next();
 	}
 
 	public ContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
 			Set<Rule> rules, String start) {
 		super(terminal,nonterminal,rules,start);
-		this.startSymbol=start;
 	}
 
 	@Override
@@ -165,7 +175,7 @@ public abstract class ContextFreeGrammar extends Grammar {
 		return new ChomskyNormalGrammar(getTerminalSymbols(),newnonterm,cfg.getRules(),cfg.getStartSymbols());
 	}
 	public String getStartSymbol(){
-		return startSymbol;
+		return getStartSymbols().iterator().next();
 	}
 	public static ContextFreeGrammar createContextFreeGrammar(Set<String> terminal, Set<String> nonterminal,
 			Set<Rule> rules, Set<String> start){

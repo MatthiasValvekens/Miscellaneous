@@ -2,13 +2,19 @@ package compling.grammar;
 
 import java.util.List;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
 import compling.grammar.util.GrammarUtils;
 import compling.grammar.util.SyntaxForest;
 import compling.grammar.util.Tree;
+import compling.morphology.*;
+import compling.parsers.Parser;
+import compling.parsers.Tokenizer;
 
 public class GrammarTest {
 	public static void main(String[] args) throws Exception{
@@ -50,11 +56,36 @@ public class GrammarTest {
 //		System.out.println(t);
 //		try{(new java.io.PrintStream(new java.io.FileOutputStream("syntax.gv"))).println(t.toDot("syntax_tree"));}catch(Throwable e){}
 		//testExtended();
-		testGeneral();
+		//testGeneral();
 		//testExtended();
+		testMorphologistGenerator();
 		
 	}
 	
+	private static void testMorphologistGenerator() throws Exception{
+	    String filecontent =new String(Files.readAllBytes(Paths.get("morphologist_testspec.txt")));
+	    Tokenizer t=Tokenizer.getGrammarTokenizer();
+	    List<String> tokens=t.tokenize(filecontent);
+	    Parser p = new Parser(Tokenizer.getGrammarTokenizer(),MorphologistFactory.getMorphologistMetasyntax(),new MorphologistFactory.MetaMorphologist());
+	    
+	    
+//	    List<String> speclist=new ArrayList<String>();
+//	    BufferedReader r= new BufferedReader(new FileReader(file));
+//	    String line;
+//	    while((line=r.readLine())!=null){
+//	    	speclist.addAll(Arrays.asList(line.split(" ")));
+//	    	speclist.add("\n");
+//	    }
+//		HashSet<String> termset=new HashSet<String>(speclist);
+//		System.out.println(speclist);
+//		ExtendedChomskyNormalGrammar metagrammar =MorphologistFactory.getMorphologistMetagrammar(termset);
+
+		SyntaxForest f = p.allParses(tokens);
+		Writer w =new PrintWriter(new java.io.File("morphologist_test.gv"),"UTF-8");
+		w.write(f.toDot("morphologist","fontname=\"MS Mincho\""));
+		w.close();
+	}
+
 	private static void testGeneral() throws Exception {
 		java.util.Set<Rule> ruleset = GrammarUtils.rulesFromFile("japanesesyntax3.txt");
 		ruleset.addAll(GrammarUtils.rulesFromFile("japaneselexicon.txt"));

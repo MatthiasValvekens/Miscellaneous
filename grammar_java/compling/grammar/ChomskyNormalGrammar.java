@@ -9,7 +9,7 @@ import compling.grammar.util.Tree;
 
 public class ChomskyNormalGrammar extends ExtendedChomskyNormalGrammar {
 	//operates on the assumption that the grammar in question is meant to be Chomsky normal
-	public static ChomskyNormalGrammar getSymbolsFromRules(Set<Rule> rules,String start){
+	static ChomskyNormalGrammar getSymbolsFromRules(Set<Rule> rules,String start){
 		HashSet<String> term= new HashSet<String>();
 		HashSet<String> nonterm= new HashSet<String>();
 		for(Rule r: rules){

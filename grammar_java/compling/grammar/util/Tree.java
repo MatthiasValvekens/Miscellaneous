@@ -12,7 +12,9 @@ public class Tree<T> {
 	public List<Tree<T>> getChildren(){
 		return Collections.unmodifiableList(children);
 	}
-
+	public boolean isValid(){
+		return valid;
+	}
 	public void addChild(T value){
 		if(!valid) throw new IllegalStateException("Tree has been destroyed.");
 		children.add(new Tree<T>(value));
