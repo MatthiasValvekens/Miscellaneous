@@ -3,10 +3,13 @@
 (defstruct (feature (:constructor make-feature (name hierarchy)))
   (name)
   (hierarchy nil :type tree-node))
-(defun range (a b)
-  (loop for i from a to b collect i))
+
 (defun matches-type (sample type)
   (not (null (df sample type))))
+;checks if hyp-a is more general than hyp-b
+(defun generalizes-p (hyp-a hyp-b)
+  (if (null hyp-b) t
+      (and (df (tree-node-value (caar hyp-b)) (caar hyp-a)) (generalizes-p (cdr hyp-a) (cdr hyp-b)))))
 (defun is-subtype-p (sub super)
   (matches-type (tree-node-value sub) super))
 (defun accepts-p (hypothesis sample)
@@ -38,11 +41,14 @@
 (defun translate-hypothesis (hypothesis features &key general-first)
   (loop for arg in (mapcar #'cons hypothesis features) collect
        (if (car arg) (df-wrapper (car arg) (feature-hierarchy (cdr arg)) :root-first general-first))))
+(defun readable-hypothesis-list (hyp-lst)
+  (loop for hyp in hyp-lst collect
+       (loop for feat in hyp collect (tree-node-value (car feat)))))
 ;fix ONE bad feature in the hypothesis, then recurse
 ;hypotheses are passed as tuples of paths of tree nodes
 ;marginal generalisation is always unique in tree hierachies
 (defun generalize-to (hypothesis sample)
-  (if (accepts-p hypothesis sample) hypothesis
+  (if (accepts-p hypothesis sample) (list hypothesis) ;matter of being consistent
       (destructuring-bind (pos samp feat)
 	  (find-spurious-feature hypothesis sample nil)
 	(generalize-to (substitute-nth ;replace the one bad position with a sufficiently generalized version, then recurse
@@ -69,14 +75,54 @@
 (defstruct (train-data (:constructor make-train-data (accept reject)))
   (accept)
   (reject))
-	   
+(defun has-generalization-in-p (hyp lst)
+  (cond ((null lst) nil)
+	((generalizes-p (car lst) hyp) t)
+	((has-generalization-in-p hyp (cdr lst)))))
+(defun has-specialization-in-p (hyp lst)
+  (cond ((null lst) nil)
+	((generalizes-p hyp (car lst)) t)
+	((has-specialization-in-p hyp (cdr lst)))))
+
 (defun make-trainable-judge (features)
-  (let ((S (list features )) ;<--- extract stuff
-	(G nil))
+  (let ((S (list nil))			;<--- extract stuff
+	(G (list (loop for feat in features collect
+		      (list (feature-hierarchy feat))))))
     (list (lambda (t-data)
-	    ;training code here
+					;generalize S
+	    (if (null (car S)) (setq S (list (translate-hypothesis (car (train-data-accept t-data)) features))))
+	    (loop for sample in (train-data-accept t-data)
+	       do (progn
+		    (setf 
+		     S
+		     (append S
+			     (delete-if 
+			      (lambda (hyp) (or (not (has-generalization-in-p hyp G)) ;flat-out wrong
+						(has-specialization-in-p hyp S))) ;redundant
+			      (loop for hyp in S nconc (generalize-to hyp sample)))))
+		    (setf ;prune bad hypotheses from G
+		     G
+		     (delete-if
+		      (lambda (hyp) (not(accepts-p hyp sample)))
+		      G))))
+	    (loop for sample in (train-data-reject t-data)
+	       do (progn
+		    (setf 
+		     G 
+		     (append G 
+			     (delete-if
+			      (lambda (hyp) (or (not (has-specialization-in-p hyp S))
+						(has-generalization-in-p hyp G)))
+			      (loop for hyp in G nconc (specialize-to hyp sample)))))
+		    (setf
+		     S
+		     (delete-if
+		      (lambda (hyp) (accepts-p hyp sample))
+		      S))))
 	    t)
 	  (lambda (sample)
-	    ;judging code computing the truth probability here
-	    0)
-	  )))
+					;judging code computing the truth probability
+	    (/ (loop for hyp in (append S G) summing
+		    (if (accepts-p hyp sample) 1 0)) (+ (length S) (length G))))
+	  (lambda nil
+	    (list (readable-hypothesis-list S) (readable-hypothesis-list G))))))
