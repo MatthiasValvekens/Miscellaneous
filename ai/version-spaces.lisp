@@ -44,6 +44,9 @@
 (defun readable-hypothesis-list (hyp-lst)
   (loop for hyp in hyp-lst collect
        (loop for feat in hyp collect (tree-node-value (car feat)))))
+(defun pp-hyp-list (hyp-list)
+  (print (readable-hypothesis-list hyp-list))
+  hyp-list)
 ;fix ONE bad feature in the hypothesis, then recurse
 ;hypotheses are passed as tuples of paths of tree nodes
 ;marginal generalisation is always unique in tree hierachies
@@ -83,7 +86,6 @@
   (cond ((null lst) nil)
 	((generalizes-p hyp (car lst)) t)
 	((has-specialization-in-p hyp (cdr lst)))))
-
 (defun make-trainable-judge (features)
   (let ((S (list nil))			;<--- extract stuff
 	(G (list (loop for feat in features collect
@@ -97,8 +99,9 @@
 		     S
 		     (append S
 			     (delete-if 
-			      (lambda (hyp) (or (not (has-generalization-in-p hyp G)) ;flat-out wrong
-						(has-specialization-in-p hyp S))) ;redundant
+			      (lambda (hyp) (or 
+					     (not (has-generalization-in-p hyp G))
+					     (has-generalization-in-p hyp S)))
 			      (loop for hyp in S nconc (generalize-to hyp sample)))))
 		    (setf ;prune bad hypotheses from G
 		     G
@@ -112,7 +115,7 @@
 		     (append G 
 			     (delete-if
 			      (lambda (hyp) (or (not (has-specialization-in-p hyp S))
-						(has-generalization-in-p hyp G)))
+						(has-specialization-in-p hyp G)))
 			      (loop for hyp in G nconc (specialize-to hyp sample)))))
 		    (setf
 		     S
