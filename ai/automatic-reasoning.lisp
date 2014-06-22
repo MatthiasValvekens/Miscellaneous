@@ -42,10 +42,7 @@
       (cons (cons (sub-all* varsym expr (caar subbable)) (sub-all* varsym expr (cdar subbable))) (sub-all varsym expr (cdr subbable)))))
 (defun effect-substitution (u varsym expr)
     (sub-all varsym expr u))
-(defun mass-substitution (u varsym-lst expr-lst)
-  (if (null varsym-lst) u
-      (mass-substitution (effect-substitution u (car varsym-lst) (car expr-lst)) 
-			 (cdr varsym-lst) (cdr expr-lst))))
+
 ;Martelli-Montanari unification
 (defun find-mgu (lit-a lit-b vars)
    (funcall
