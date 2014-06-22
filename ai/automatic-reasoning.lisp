@@ -49,7 +49,7 @@
     (y (lambda (me)
 	(lambda (u)
 	  (cond 
-	    ((every (lambda (x) (symbolp (car x))) u) u) ;end when only substitutions are left
+	    ((every (lambda (x) (member (car x) vars)) u) u) ;end when only substitutions are left
 	    ((and (not (member (caar u) vars)) (member (cdar u) vars)) ;s/t with s nonvariable and t variable should become t/s
 	     (funcall me (cons (cons (cdar u) (caar u)) (cdr u))))
 	    ((and (member (caar u) vars) (eq (caar u) (cdar u)))
