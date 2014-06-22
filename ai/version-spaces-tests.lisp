@@ -5,9 +5,7 @@
 (princ (tree-nodes-to-dot (loop for x in (find-boundary-nodes (list (feature-hierarchy *feat1*)) (lambda (x) (not (matches-type 'animal x)))) collect (car x))))
 
 
-
-(loop for y in (specialize-to (translate-hypothesis '(creature status) (list *feat1* *feat2*)) '(human not-awesome)) collect (princ (tree-nodes-to-dot (loop for x in y collect (car x)))))
-
+(readable-hypothesis-list (specialize-to (translate-hypothesis '(creature status) (list *feat1* *feat2*)) '(human not-awesome)))
 
 (generalizes-p (translator '(creature not-extinct)) (translator '(human awesome)))
 (generalizes-p (translator '(creature extinct)) (translator '(human awesome)))
@@ -20,7 +18,7 @@
 	  (list
 	   '(human not-awesome)
 	   '(plant extinct))))
-(funcall (cadr *trainer*) '(plant extinct))
-(funcall (third *trainer*))
+(print (funcall (cadr *trainer*) '(plant extinct)))
+(print (funcall (third *trainer*)))
 
-(has-generalization-in-p (translator '(human awesome)) (list (translator '(human extinct))(translator '(creature not-extinct))))
+(has-strict-generalization-in-p (translator '(human awesome)) (list (translator '(human not-awesome))(translator '(human awesome))))

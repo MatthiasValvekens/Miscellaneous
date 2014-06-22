@@ -3,7 +3,12 @@
 (defstruct (feature (:constructor make-feature (name hierarchy)))
   (name)
   (hierarchy nil :type tree-node))
-
+(defun hyp-eq (hyp-a hyp-b)
+  (cond ((eq hyp-a hyp-b) t)
+	((string= 
+	  (tree-node-value (caar hyp-a)) 
+	  (tree-node-value (caar hyp-b)))
+	 (hyp-eq (cdr hyp-a) (cdr hyp-b)))))
 (defun matches-type (sample type)
   (not (null (df sample type))))
 ;checks if hyp-a is more general than hyp-b
@@ -82,10 +87,18 @@
   (cond ((null lst) nil)
 	((generalizes-p (car lst) hyp) t)
 	((has-generalization-in-p hyp (cdr lst)))))
+(defun has-strict-generalization-in-p (hyp lst)
+  (cond ((null lst) nil)
+	((and (not (hyp-eq hyp (car lst))) (generalizes-p (car lst) hyp)) t)
+	((has-strict-generalization-in-p hyp (cdr lst)))))
 (defun has-specialization-in-p (hyp lst)
   (cond ((null lst) nil)
 	((generalizes-p hyp (car lst)) t)
 	((has-specialization-in-p hyp (cdr lst)))))
+(defun has-strict-specialization-in-p (hyp lst)
+  (cond ((null lst) nil)
+	((and (not (hyp-eq hyp (car lst))) (generalizes-p hyp (car lst))) t)
+	((has-strict-specialization-in-p hyp (cdr lst)))))
 (defun make-trainable-judge (features)
   (let ((S (list nil))			;<--- extract stuff
 	(G (list (loop for feat in features collect
@@ -99,29 +112,26 @@
 		     S
 		     (append S
 			     (delete-if 
-			      (lambda (hyp) (or 
-					     (not (has-generalization-in-p hyp G))
-					     (has-generalization-in-p hyp S)))
-			      (loop for hyp in S nconc (generalize-to hyp sample)))))
-		    (setf ;prune bad hypotheses from G
-		     G
-		     (delete-if
-		      (lambda (hyp) (not(accepts-p hyp sample)))
-		      G))))
+			      (lambda (hyp) (not (has-generalization-in-p hyp G)))
+			      (loop for hyp in (remove-if
+						(lambda (hyp) (accepts-p hyp sample)) S)
+				 nconc (generalize-to hyp sample)))))
+		    ;redundancy removal
+		    (setf S (delete-if (lambda (hyp) (has-strict-generalization-in-p hyp S)) S))
+		    ;remove bad hypotheses
+		    (setf G (delete-if (lambda (hyp) (not(accepts-p hyp sample))) G))))
 	    (loop for sample in (train-data-reject t-data)
 	       do (progn
 		    (setf 
 		     G 
 		     (append G 
 			     (delete-if
-			      (lambda (hyp) (or (not (has-specialization-in-p hyp S))
-						(has-specialization-in-p hyp G)))
-			      (loop for hyp in G nconc (specialize-to hyp sample)))))
-		    (setf
-		     S
-		     (delete-if
-		      (lambda (hyp) (accepts-p hyp sample))
-		      S))))
+			      (lambda (hyp) (not (has-specialization-in-p hyp S)))
+			      (loop for hyp in (remove-if 
+						(lambda (hyp) (not(accepts-p hyp sample))) G)
+				 nconc (specialize-to hyp sample)))))
+		    (setf G (delete-if (lambda (hyp) (has-strict-specialization-in-p hyp G)) G))
+		    (setf S (delete-if (lambda (hyp) (accepts-p hyp sample)) S))))
 	    t)
 	  (lambda (sample)
 					;judging code computing the truth probability
