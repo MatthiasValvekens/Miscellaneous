@@ -45,30 +45,35 @@
 
 ;Martelli-Montanari unification
 (defun find-mgu (lit-a lit-b vars)
-   (funcall
-    (y (lambda (me)
+  (funcall
+   (y (lambda (me)
 	(lambda (u)
-	  (cond 
-	    ((every (lambda (x) (member (car x) vars)) u) u) ;end when only substitutions are left
-	    ((and (not (member (caar u) vars)) (member (cdar u) vars)) ;s/t with s nonvariable and t variable should become t/s
-	     (funcall me (cons (cons (cdar u) (caar u)) (cdr u))))
-	    ((and (member (caar u) vars) (eq (caar u) (cdar u)))
-	     (funcall me (cdr u)))	;s/s is redundant
-	    ((member (caar u) vars)
-	     (let ((varsym (caar u))
-		   (expr (cdar u)))
-	       (if (containsp varsym expr) nil ;self-referential substitution. Error
-		   (funcall me (effect-substitution (cdr u) varsym expr)))))
-	    ((and (litp (caar u)) (litp (cdar u)))
-	     (let ((fun-a (caaar u))
-		   (fun-b (cadar u))
-		   (arglist-a (cdaar u))
-		   (arglist-b (cddar u)))
-	       (if (or (not (eq fun-a fun-b)) (not (= (length arglist-a) (length arglist-b))))
-		   nil ;non-matching function substitution. Error
-		   (funcall me 
-			    (append (cdr u) (mapcar #' cons arglist-a arglist-b)))))) ;extract
+	  (if (every (lambda (x) (member (car x) vars)) u)
+	      u			 ;end when only substitutions are left
+	      (funcall me	   
+		       (cond 
+			 ((and (not (member (caar u) vars)) 
+			       (member (cdar u) vars)) ;s/t with s nonvariable and t variable should become t/s
+			  (cons (cons (cdar u) (caar u)) (cdr u)))
+			 ((and (member (caar u) vars) (eq (caar u) (cdar u)))
+			  (cdr u))	;s/s is redundant
+			 ((member (caar u) vars)
+			  (let ((varsym (caar u))
+				(expr (cdar u)))
+			    (if (containsp varsym expr) nil ;self-referential substitution. Error
+				(effect-substitution (cdr u) varsym expr))))
+			 ((and (litp (caar u)) (litp (cdar u)))
+			  (let ((fun-a (caaar u))
+				(fun-b (cadar u))
+				(arglist-a (cdaar u))
+				(arglist-b (cddar u)))
+			    (if (or (not (eq fun-a fun-b))
+				    (not (= (length arglist-a)
+					    (length arglist-b))))
+				nil ;non-matching function substitution. Error 
+				(append (cdr u)
+					(mapcar #'cons arglist-a arglist-b))))) ;extract
 
-	    (t (funcall me (reverse (cons (car u) (reverse (cdr u)))))))))) ;move useless stuff to back
+			 (t (reverse (cons (car u) (reverse (cdr u))))))))))) ;move useless stuff to back
    (list (cons lit-a lit-b))))
 		   
