@@ -42,14 +42,19 @@
       (cons (cons (sub-all* varsym expr (caar subbable)) (sub-all* varsym expr (cdar subbable))) (sub-all varsym expr (cdr subbable)))))
 (defun effect-substitution (u varsym expr)
     (sub-all varsym expr u))
-
+(defun setp (lst &optional (forbidden nil))
+  (cond ((null lst) t)
+	((member (car lst) forbidden) nil)
+	(t (setp (cdr lst) (cons (car lst) forbidden)))))
 ;Martelli-Montanari unification
 (defun find-mgu (lit-a lit-b vars)
   (funcall
    (y (lambda (me)
 	(lambda (u)
-	  (if (every (lambda (x) (member (car x) vars)) u)
-	      u			 ;end when only substitutions are left
+	  (if (and (every (lambda (x) (member (car x) vars)) u)
+		   (setp (mapcar #'car u))
+		   (every (lambda (x) (not (containsp (car x) (cdr x)))) u))
+	      u			 ;end when only proper substitutions are left
 	      (funcall me	   
 		       (cond 
 			 ((and (not (member (caar u) vars)) 
