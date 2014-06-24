@@ -76,8 +76,8 @@
 				    (not (= (length arglist-a)
 					    (length arglist-b))))
 				nil ;non-matching function substitution. Error 
-				(append (cdr u)
-					(mapcar #'cons arglist-a arglist-b))))) ;extract
+				(nconc (mapcar #'cons arglist-a arglist-b)
+				       (cdr u))))) ;extract
 
 			 (t (reverse (cons (car u) (reverse (cdr u))))))))))) ;move useless stuff to back
    (list (cons lit-a lit-b))))
