@@ -52,9 +52,10 @@
    (y (lambda (me)
 	(lambda (u)
 	  (if (and (every (lambda (x) (member (car x) vars)) u)
-		   (setp (mapcar #'car u))
-		   (every (lambda (x) (not (containsp (car x) (cdr x)))) u))
-	      u			 ;end when only proper substitutions are left
+		   (let ((subable-vars (mapcar #'car u)))
+		     (and (setp subable-vars)
+			  (every (lambda (x) (every (lambda (var) (not (containsp var (cdr x)))) subable-vars)) u))))
+	      u		  ;end when only proper substitutions are left
 	      (funcall me	   
 		       (cond 
 			 ((and (not (member (caar u) vars)) 
@@ -81,4 +82,15 @@
 
 			 (t (reverse (cons (car u) (reverse (cdr u))))))))))) ;move useless stuff to back
    (list (cons lit-a lit-b))))
-		   
+(defun apply-subs* (expr subs*)
+  (if (null subs*)
+      expr
+      (apply-subs* (sub-all* (caar subs*) (cdar subs*) expr) (cdr subs*))))
+; effects a sequence of substitutions
+(defun apply-subs (explist subs)
+  (if (null explist) 
+      nil
+      (cons (apply-subs* (car explist) subs) (apply-subs (cdr explist) subs))))
+	     
+(defun unify (lit-a lit-b vars)
+  (apply-subs* lit-a (find-mgu lit-a lit-b vars)))
