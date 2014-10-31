@@ -1,0 +1,6 @@
+*~
+*.png
+*.bin
+*.8xp
+__pycache__/*
+*.exe
